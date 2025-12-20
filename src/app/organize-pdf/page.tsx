@@ -108,7 +108,6 @@ export default function OrganizePDFPage() {
 
     const handleDownload = () => {
         if (!resultBlob) return;
-        downloadFile(new Uint8Array(resultBlob.size), "organized.pdf");
         const url = URL.createObjectURL(resultBlob);
         const link = document.createElement("a");
         link.href = url;
