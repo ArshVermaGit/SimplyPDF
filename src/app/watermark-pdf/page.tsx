@@ -42,15 +42,25 @@ export default function WatermarkPDFPage() {
 
     const loadPreview = async (pdfFile: File) => {
         setStatus("loading");
+        setErrorMessage("");
         try {
+            console.log("Loading pdfjs-dist...");
             const pdfjsLib = await import("pdfjs-dist");
-            pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+            const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+            pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
             const arrayBuffer = await pdfFile.arrayBuffer();
-            const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const loadingTask = pdfjsLib.getDocument({
+                data: new Uint8Array(arrayBuffer),
+                useWorkerFetch: true,
+                isEvalSupported: false
+            });
+
+            const pdfDoc = await loadingTask.promise;
+            const numPages = pdfDoc.numPages;
 
             const pageImages: string[] = [];
-            for (let i = 1; i <= Math.min(pdfDoc.numPages, 10); i++) {
+            for (let i = 1; i <= Math.min(numPages, 10); i++) {
                 const page = await pdfDoc.getPage(i);
                 const viewport = page.getViewport({ scale: 0.5 });
                 const canvas = document.createElement("canvas");
@@ -59,13 +69,15 @@ export default function WatermarkPDFPage() {
                 canvas.width = viewport.width;
                 await page.render({ canvasContext: context, viewport } as any).promise;
                 pageImages.push(canvas.toDataURL("image/jpeg", 0.6));
+                (page as any).cleanup?.();
             }
 
             setPages(pageImages);
             setStatus("ready");
-        } catch (error) {
+            await pdfDoc.destroy();
+        } catch (error: any) {
             console.error(error);
-            setErrorMessage("Failed to load PDF preview.");
+            setErrorMessage(`Failed to load PDF preview: ${error.message || "Unknown error"}`);
             setStatus("error");
         }
     };
