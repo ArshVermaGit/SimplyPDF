@@ -66,13 +66,7 @@ export function ToolPageLayout({
 
     const handleDownload = () => {
         if (resultBlob) {
-            downloadFile(new Uint8Array(0), downloadFileName);
-            const url = URL.createObjectURL(resultBlob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = downloadFileName;
-            link.click();
-            URL.revokeObjectURL(url);
+            downloadFile(resultBlob, downloadFileName);
         }
     };
 
