@@ -41,6 +41,10 @@ const tools = [
   { title: "Watermark", description: "Add text watermarks", icon: Stamp, href: "/watermark-pdf" },
   { title: "Sign PDF", description: "Add digital signature", icon: FileSignature, href: "/sign-pdf" },
   { title: "Edit PDF", description: "Modify PDF content", icon: Type, href: "/edit-pdf" },
+  { title: "OCR PDF", description: "Extract text from scans", icon: ScanLine, href: "/ocr-pdf" },
+  { title: "PDF to Word", description: "Convert PDF to Word", icon: FileText, href: "/pdf-to-word" },
+  { title: "Word to PDF", description: "Convert Word to PDF", icon: FileUp, href: "/word-to-pdf" },
+  { title: "PDF to Excel", description: "Convert PDF to Excel", icon: FileDown, href: "/pdf-to-excel" },
 ];
 
 const features = [
@@ -239,7 +243,7 @@ export default function Home() {
           </div>
 
           {/* Second Row */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4 stagger-children">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 stagger-children">
             {tools.slice(4).map((tool) => (
               <Link key={tool.href} href={tool.href} className="tool-card">
                 <div className="tool-icon mb-4">
