@@ -1,32 +1,91 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, X, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, RotateCw, RotateCcw } from "lucide-react";
+import { Upload, File, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, RotateCw, Eye, Check } from "lucide-react";
 import { rotatePDF, formatFileSize, uint8ArrayToBlob } from "@/lib/pdf-utils";
+import { PDFPreviewModal } from "@/components/PDFPreviewModal";
+
+interface PageInfo {
+    pageNumber: number;
+    image: string;
+    rotation: 0 | 90 | 180 | 270;
+    selected: boolean;
+}
 
 export default function RotatePDFPage() {
     const [file, setFile] = useState<File | null>(null);
-    const [rotation, setRotation] = useState<90 | 180 | 270>(90);
-    const [status, setStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
+    const [status, setStatus] = useState<"idle" | "loading" | "ready" | "processing" | "success" | "error">("idle");
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
     const [errorMessage, setErrorMessage] = useState("");
     const [dragActive, setDragActive] = useState(false);
+    const [pages, setPages] = useState<PageInfo[]>([]);
+    const [globalRotation, setGlobalRotation] = useState<90 | 180 | 270>(90);
+    const [rotateMode, setRotateMode] = useState<"all" | "selected">("all");
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewPage, setPreviewPage] = useState(0);
 
-    const handleDrop = (e: React.DragEvent) => {
+    const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         setDragActive(false);
         const droppedFile = e.dataTransfer.files[0];
         if (droppedFile?.type === "application/pdf") {
             setFile(droppedFile);
+            await loadPages(droppedFile);
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
         if (selectedFile) {
             setFile(selectedFile);
+            await loadPages(selectedFile);
         }
+    };
+
+    const loadPages = async (pdfFile: File) => {
+        setStatus("loading");
+        try {
+            const pdfjsLib = await import("pdfjs-dist");
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+            const arrayBuffer = await pdfFile.arrayBuffer();
+            const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const numPages = pdfDoc.numPages;
+
+            const pageInfos: PageInfo[] = [];
+            for (let i = 1; i <= numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                const viewport = page.getViewport({ scale: 0.4 });
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d")!;
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                await page.render({ canvasContext: context, viewport } as any).promise;
+
+                pageInfos.push({
+                    pageNumber: i,
+                    image: canvas.toDataURL("image/jpeg", 0.6),
+                    rotation: 0,
+                    selected: true,
+                });
+            }
+
+            setPages(pageInfos);
+            setStatus("ready");
+        } catch (error) {
+            console.error(error);
+            setErrorMessage("Failed to load PDF pages.");
+            setStatus("error");
+        }
+    };
+
+    const togglePage = (pageNumber: number) => {
+        setPages(pages.map(p =>
+            p.pageNumber === pageNumber ? { ...p, selected: !p.selected } : p
+        ));
     };
 
     const handleRotate = async () => {
@@ -35,8 +94,8 @@ export default function RotatePDFPage() {
         setErrorMessage("");
 
         try {
-            const rotatedBytes = await rotatePDF(file, rotation);
-            setResultBlob(uint8ArrayToBlob(rotatedBytes));
+            const pdfBytes = await rotatePDF(file, globalRotation);
+            setResultBlob(uint8ArrayToBlob(pdfBytes));
             setStatus("success");
         } catch (error) {
             console.error(error);
@@ -50,22 +109,22 @@ export default function RotatePDFPage() {
         const url = URL.createObjectURL(resultBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "rotated.pdf";
+        link.download = `rotated-${file?.name || "document.pdf"}`;
         link.click();
         URL.revokeObjectURL(url);
     };
 
     const reset = () => {
         setFile(null);
-        setRotation(90);
         setStatus("idle");
+        setPages([]);
         setResultBlob(null);
         setErrorMessage("");
     };
 
     return (
         <div className="min-h-[calc(100vh-80px)] pt-24 pb-16">
-            <div className="container mx-auto px-4 py-12 md:py-20">
+            <div className="container mx-auto px-4">
                 <AnimatePresence mode="wait">
                     {status === "idle" && (
                         <motion.div
@@ -73,13 +132,21 @@ export default function RotatePDFPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            className="flex flex-col items-center max-w-4xl mx-auto"
+                            className="max-w-4xl mx-auto"
                         >
-                            {!file ? (
+                            <div className="text-center mb-12">
+                                <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-2xl mb-6">
+                                    <RotateCw className="w-8 h-8" />
+                                </div>
+                                <h1 className="text-4xl md:text-5xl font-bold mb-4">Rotate PDF</h1>
+                                <p className="text-gray-500 text-lg max-w-xl mx-auto">
+                                    Rotate your PDF pages with visual preview.
+                                </p>
+                            </div>
+
+                            <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-xl">
                                 <div
-                                    className={`relative w-full flex flex-col items-center justify-center p-12 py-24 border-2 border-dashed rounded-3xl transition-all duration-300 cursor-pointer ${dragActive
-                                        ? "border-primary bg-primary/5"
-                                        : "border-border bg-white hover:border-primary/50 hover:bg-primary/5"
+                                    className={`relative flex flex-col items-center justify-center p-12 py-20 border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer ${dragActive ? "border-black bg-gray-50" : "border-gray-200 hover:border-gray-400"
                                         }`}
                                     onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                                     onDragLeave={() => setDragActive(false)}
@@ -93,110 +160,141 @@ export default function RotatePDFPage() {
                                         className="hidden"
                                         onChange={handleFileChange}
                                     />
-                                    <div className="bg-primary/10 p-6 rounded-2xl mb-6">
-                                        <Upload className="w-12 h-12 text-primary" />
-                                    </div>
-                                    <h2 className="text-3xl font-bold text-foreground mb-3">Rotate PDF</h2>
-                                    <p className="text-muted-foreground mb-8 text-center max-w-md">
-                                        Rotate your PDFs the way you need them. All pages will be rotated.
-                                    </p>
-                                    <button className="btn-primary !py-4 !px-12 !text-lg">
-                                        Select PDF file
-                                    </button>
-                                    <p className="mt-6 text-sm text-muted-foreground">
-                                        or drag and drop a PDF here
-                                    </p>
+                                    <Upload className="w-12 h-12 text-gray-400 mb-4" />
+                                    <p className="text-lg font-medium mb-2">Drop your PDF here</p>
+                                    <p className="text-gray-400 text-sm">or click to browse</p>
                                 </div>
-                            ) : (
-                                <div className="w-full space-y-8">
-                                    {/* Selected file */}
-                                    <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-border shadow-sm">
-                                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                                            <File className="w-6 h-6 text-primary" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-medium text-foreground truncate">{file.name}</p>
-                                            <p className="text-sm text-muted-foreground">{formatFileSize(file.size)}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => setFile(null)}
-                                            className="p-2 rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-colors"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {status === "loading" && (
+                        <motion.div
+                            key="loading"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex flex-col items-center justify-center py-32 max-w-lg mx-auto text-center"
+                        >
+                            <div className="relative mb-8">
+                                <div className="w-24 h-24 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
+                                <Loader2 className="w-10 h-10 text-black absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                            </div>
+                            <h2 className="text-2xl font-bold mb-2">Loading PDF...</h2>
+                            <p className="text-gray-500">Generating previews...</p>
+                        </motion.div>
+                    )}
+
+                    {status === "ready" && (
+                        <motion.div
+                            key="ready"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="max-w-6xl mx-auto"
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-4">
+                                    <File className="w-8 h-8" />
+                                    <div>
+                                        <p className="font-semibold text-lg">{file?.name}</p>
+                                        <p className="text-gray-500">{pages.length} pages</p>
                                     </div>
+                                </div>
+                                <button onClick={reset} className="btn-outline py-2 px-4 text-sm">
+                                    Cancel
+                                </button>
+                            </div>
 
-                                    {/* Rotation options */}
-                                    <div className="bg-white p-6 rounded-xl border border-border">
-                                        <h3 className="text-lg font-semibold text-foreground mb-4">Select Rotation</h3>
+                            {/* Rotation Options */}
+                            <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
+                                <h3 className="font-semibold mb-4">Rotation Angle</h3>
+                                <div className="flex flex-wrap gap-3">
+                                    {[
+                                        { value: 90, label: "90°", desc: "Rotate right" },
+                                        { value: 180, label: "180°", desc: "Flip upside down" },
+                                        { value: 270, label: "270°", desc: "Rotate left" },
+                                    ].map((option) => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => setGlobalRotation(option.value as 90 | 180 | 270)}
+                                            className={`flex-1 min-w-32 p-4 rounded-xl border-2 text-center transition-all ${globalRotation === option.value
+                                                    ? "border-black bg-gray-50"
+                                                    : "border-gray-200 hover:border-gray-400"
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-center gap-2 mb-1">
+                                                <RotateCw className="w-5 h-5" style={{ transform: `rotate(${option.value}deg)` }} />
+                                                <span className="font-bold text-lg">{option.label}</span>
+                                            </div>
+                                            <p className="text-sm text-gray-500">{option.desc}</p>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
 
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <button
-                                                onClick={() => setRotation(90)}
-                                                className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${rotation === 90
-                                                    ? "border-primary bg-primary/5"
-                                                    : "border-border hover:border-primary/50"
-                                                    }`}
-                                            >
-                                                <RotateCw className="w-10 h-10 text-primary" />
-                                                <span className="font-medium">90° Right</span>
-                                            </button>
-
-                                            <button
-                                                onClick={() => setRotation(180)}
-                                                className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${rotation === 180
-                                                    ? "border-primary bg-primary/5"
-                                                    : "border-border hover:border-primary/50"
-                                                    }`}
-                                            >
-                                                <div className="relative w-10 h-10">
-                                                    <RotateCw className="w-10 h-10 text-primary absolute" />
-                                                    <RotateCw className="w-10 h-10 text-primary/50 absolute rotate-180" />
+                            {/* Page Preview Grid */}
+                            <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
+                                <h3 className="font-semibold mb-4">Page Preview (Click to view full page)</h3>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                                    {pages.map((page, index) => (
+                                        <motion.div
+                                            key={page.pageNumber}
+                                            layout
+                                            whileHover={{ y: -2, scale: 1.02 }}
+                                            className="relative group cursor-pointer"
+                                            onClick={() => { setPreviewPage(index); setPreviewOpen(true); }}
+                                        >
+                                            <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-black transition-all">
+                                                <div
+                                                    className="aspect-[3/4] bg-white transition-transform duration-500"
+                                                    style={{ transform: `rotate(${globalRotation}deg)` }}
+                                                >
+                                                    <img
+                                                        src={page.image}
+                                                        alt={`Page ${page.pageNumber}`}
+                                                        className="w-full h-full object-contain"
+                                                    />
                                                 </div>
-                                                <span className="font-medium">180°</span>
-                                            </button>
 
-                                            <button
-                                                onClick={() => setRotation(270)}
-                                                className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${rotation === 270
-                                                    ? "border-primary bg-primary/5"
-                                                    : "border-border hover:border-primary/50"
-                                                    }`}
-                                            >
-                                                <RotateCcw className="w-10 h-10 text-primary" />
-                                                <span className="font-medium">90° Left</span>
-                                            </button>
-                                        </div>
-                                    </div>
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Eye className="w-5 h-5 text-white" />
+                                                    </div>
+                                                </div>
 
-                                    {/* Action button */}
-                                    <div className="flex justify-center">
-                                        <button
-                                            onClick={handleRotate}
-                                            className="btn-primary !py-5 !px-16 !text-xl flex items-center gap-3 shadow-2xl shadow-primary/40 hover:-translate-y-1 transition-transform"
-                                        >
-                                            <RotateCw className="w-6 h-6" /> Rotate PDF
-                                        </button>
-                                    </div>
+                                                <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black text-white text-xs font-bold rounded">
+                                                    {page.pageNumber}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
                                 </div>
-                            )}
+                            </div>
+
+                            {/* Action Button */}
+                            <div className="flex justify-center">
+                                <button onClick={handleRotate} className="btn-primary py-4 px-12 text-lg">
+                                    <RotateCw className="w-5 h-5 inline mr-2" />
+                                    Rotate All Pages
+                                </button>
+                            </div>
                         </motion.div>
                     )}
 
                     {status === "processing" && (
                         <motion.div
                             key="processing"
-                            initial={{ opacity: 0, scale: 0.9 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 1.1 }}
-                            className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-border shadow-xl max-w-2xl mx-auto"
+                            className="flex flex-col items-center justify-center py-32 max-w-lg mx-auto text-center"
                         >
-                            <div className="relative">
-                                <div className="w-24 h-24 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                                <Loader2 className="w-10 h-10 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                            <div className="relative mb-8">
+                                <div className="w-24 h-24 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
+                                <Loader2 className="w-10 h-10 text-black absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
                             </div>
-                            <h3 className="text-2xl font-bold text-foreground mt-8 mb-2">Rotating your PDF...</h3>
-                            <p className="text-muted-foreground">Please wait, this won&apos;t take long.</p>
+                            <h2 className="text-2xl font-bold mb-2">Rotating pages...</h2>
+                            <p className="text-gray-500">This won&apos;t take long...</p>
                         </motion.div>
                     )}
 
@@ -205,24 +303,22 @@ export default function RotatePDFPage() {
                             key="success"
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-border shadow-xl max-w-2xl mx-auto text-center"
+                            className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
                         >
-                            <div className="bg-emerald-100 p-5 rounded-2xl mb-6">
-                                <CheckCircle2 className="w-16 h-16 text-emerald-500" />
+                            <div className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mb-8">
+                                <CheckCircle2 className="w-10 h-10" />
                             </div>
-                            <h3 className="text-3xl font-bold text-foreground mb-2">PDF Rotated!</h3>
-                            <p className="text-muted-foreground mb-10 max-w-md px-4">
-                                Your PDF has been rotated {rotation}° successfully.
-                            </p>
+                            <h2 className="text-3xl font-bold mb-2">PDF Rotated!</h2>
+                            <p className="text-gray-500 mb-10">All pages rotated {globalRotation}°</p>
+
                             <div className="flex flex-col sm:flex-row gap-4">
-                                <button
-                                    onClick={handleDownload}
-                                    className="btn-primary !py-4 !px-10 flex items-center gap-2"
-                                >
-                                    <Download className="w-5 h-5" /> Download PDF
+                                <button onClick={handleDownload} className="btn-primary py-4 px-10 flex items-center gap-2">
+                                    <Download className="w-5 h-5" />
+                                    Download PDF
                                 </button>
-                                <button onClick={reset} className="btn-outline flex items-center gap-2">
-                                    <RefreshCw className="w-5 h-5" /> Rotate Another
+                                <button onClick={reset} className="btn-outline py-4 px-10 flex items-center gap-2">
+                                    <RefreshCw className="w-5 h-5" />
+                                    Rotate Another
                                 </button>
                             </div>
                         </motion.div>
@@ -233,20 +329,32 @@ export default function RotatePDFPage() {
                             key="error"
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-red-200 shadow-xl max-w-2xl mx-auto text-center"
+                            className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
                         >
-                            <div className="bg-red-100 p-5 rounded-2xl mb-6">
-                                <AlertCircle className="w-16 h-16 text-red-500" />
+                            <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-8">
+                                <AlertCircle className="w-10 h-10" />
                             </div>
-                            <h3 className="text-3xl font-bold text-foreground mb-2">Something went wrong</h3>
-                            <p className="text-muted-foreground mb-10 max-w-md px-4">{errorMessage}</p>
-                            <button onClick={reset} className="btn-primary flex items-center gap-2">
-                                <RefreshCw className="w-5 h-5" /> Try Again
+                            <h2 className="text-3xl font-bold mb-2">Something went wrong</h2>
+                            <p className="text-gray-500 mb-10">{errorMessage}</p>
+
+                            <button onClick={reset} className="btn-primary py-4 px-10 flex items-center gap-2">
+                                <RefreshCw className="w-5 h-5" />
+                                Try Again
                             </button>
                         </motion.div>
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* Preview Modal */}
+            <PDFPreviewModal
+                isOpen={previewOpen}
+                onClose={() => setPreviewOpen(false)}
+                images={pages.map(p => p.image)}
+                currentPage={previewPage}
+                onPageChange={setPreviewPage}
+                title={file?.name || "PDF Preview"}
+            />
         </div>
     );
 }
