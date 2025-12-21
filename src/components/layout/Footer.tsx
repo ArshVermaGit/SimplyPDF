@@ -27,7 +27,7 @@ const tools = [
 ];
 
 const resources = [
-    { title: "About", href: "#" },
+    { title: "About", href: "/about" },
     { title: "Privacy", href: "#" },
     { title: "Terms", href: "#" },
     { title: "Contact", href: "#" },
