@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: ['/api/', '/history'],
         },
-        sitemap: 'https://simplypdf.vercel.app/sitemap.xml',
+        sitemap: 'https://www.simplypdf.com/sitemap.xml',
     }
 }
