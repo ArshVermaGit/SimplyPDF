@@ -39,23 +39,29 @@ export default function OCRPDFPage() {
         setProgress(0);
 
         try {
-            // Dynamic import pdfjs-dist
+            console.log("Loading pdfjs-dist...");
             const pdfjsLib = await import("pdfjs-dist");
-            pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+            const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+            pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
-            // Dynamic import tesseract.js
             const Tesseract = await import("tesseract.js");
 
             const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            const numPages = pdf.numPages;
+            const loadingTask = pdfjsLib.getDocument({
+                data: new Uint8Array(arrayBuffer),
+                useWorkerFetch: true,
+                isEvalSupported: false
+            });
+
+            const pdfDoc = await loadingTask.promise;
+            const numPages = pdfDoc.numPages;
 
             let fullText = "";
 
             for (let i = 1; i <= numPages; i++) {
                 setProgress(Math.round((i / numPages) * 100));
 
-                const page = await pdf.getPage(i);
+                const page = await pdfDoc.getPage(i);
 
                 // First try to get existing text
                 const textContent = await page.getTextContent();
@@ -85,11 +91,13 @@ export default function OCRPDFPage() {
                     });
 
                     fullText += `\n--- Page ${i} (OCR) ---\n${result.data.text}\n`;
+                    (page as any).cleanup?.();
                 }
             }
 
             setExtractedText(fullText.trim());
             setStatus("success");
+            await pdfDoc.destroy();
         } catch (error) {
             console.error(error);
             setErrorMessage(error instanceof Error ? error.message : "Failed to process PDF with OCR");
