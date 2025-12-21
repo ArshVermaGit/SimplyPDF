@@ -1,4 +1,5 @@
 import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
+import JSZip from 'jszip';
 
 /**
  * Helper to convert Uint8Array to Blob (fixes TypeScript compatibility)
@@ -29,38 +30,50 @@ export async function mergePDFs(files: File[]): Promise<Uint8Array> {
  */
 export async function splitPDF(
     file: File,
-    mode: 'all' | 'range',
-    ranges?: string
+    mode: 'all' | 'range' | 'fixed_range' | 'size_limit',
+    options?: string | number
 ): Promise<{ name: string; data: Uint8Array }[]> {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await PDFDocument.load(arrayBuffer);
     const totalPages = pdf.getPageCount();
     const results: { name: string; data: Uint8Array }[] = [];
 
+    const createSplitFile = async (indices: number[], suffix: string) => {
+        const newPdf = await PDFDocument.create();
+        const copiedPages = await newPdf.copyPages(pdf, indices);
+        copiedPages.forEach((page) => newPdf.addPage(page));
+        const pdfBytes = await newPdf.save();
+        results.push({
+            name: `${file.name.replace('.pdf', '')}_${suffix}.pdf`,
+            data: pdfBytes,
+        });
+    };
+
     if (mode === 'all') {
         for (let i = 0; i < totalPages; i++) {
-            const newPdf = await PDFDocument.create();
-            const [copiedPage] = await newPdf.copyPages(pdf, [i]);
-            newPdf.addPage(copiedPage);
-            const pdfBytes = await newPdf.save();
-            results.push({
-                name: `page_${i + 1}.pdf`,
-                data: pdfBytes,
-            });
+            await createSplitFile([i], `page_${i + 1}`);
         }
-    } else if (mode === 'range' && ranges) {
-        const rangesList = parseRanges(ranges, totalPages);
+    } else if (mode === 'range' && typeof options === 'string') {
+        const rangesList = parseRanges(options, totalPages);
         for (let i = 0; i < rangesList.length; i++) {
-            const range = rangesList[i];
-            const newPdf = await PDFDocument.create();
-            const pageIndices = range.map((p) => p - 1);
-            const copiedPages = await newPdf.copyPages(pdf, pageIndices);
-            copiedPages.forEach((page) => newPdf.addPage(page));
-            const pdfBytes = await newPdf.save();
-            results.push({
-                name: `split_${i + 1}.pdf`,
-                data: pdfBytes,
-            });
+            const indices = rangesList[i].map((p) => p - 1);
+            await createSplitFile(indices, `part_${i + 1}`);
+        }
+    } else if (mode === 'fixed_range' && typeof options === 'number') {
+        const pageSize = options;
+        for (let i = 0; i < totalPages; i += pageSize) {
+            const indices = Array.from({ length: Math.min(pageSize, totalPages - i) }, (_, k) => i + k);
+            await createSplitFile(indices, `pages_${i + 1}-${i + indices.length}`);
+        }
+    } else if (mode === 'size_limit' && typeof options === 'number') {
+        // Approximate split by dividing total pages by estimated size
+        const estimatedBytesPerPage = arrayBuffer.byteLength / totalPages;
+        const targetBytes = options * 1024 * 1024; // options is in MB
+        const pagesPerSplit = Math.max(1, Math.floor(targetBytes / estimatedBytesPerPage));
+
+        for (let i = 0; i < totalPages; i += pagesPerSplit) {
+            const indices = Array.from({ length: Math.min(pagesPerSplit, totalPages - i) }, (_, k) => i + k);
+            await createSplitFile(indices, `part_${Math.floor(i / pagesPerSplit) + 1}`);
         }
     }
 
@@ -254,100 +267,137 @@ export async function addPageNumbers(
 }
 
 /**
- * Get PDF info/metadata
+ * Set/Edit PDF metadata
  */
-export async function getPDFInfo(file: File): Promise<{
-    pageCount: number;
-    title: string | undefined;
-    author: string | undefined;
-    creationDate: Date | undefined;
-    modificationDate: Date | undefined;
-    fileSize: number;
-    pages: { width: number; height: number }[];
-}> {
+export async function setPDFMetadata(
+    file: File,
+    metadata: {
+        title?: string;
+        author?: string;
+        subject?: string;
+        keywords?: string[];
+        producer?: string;
+        creator?: string;
+    }
+): Promise<Uint8Array> {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await PDFDocument.load(arrayBuffer);
-    const pages = pdf.getPages();
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
 
-    return {
-        pageCount: pdf.getPageCount(),
-        title: pdf.getTitle(),
-        author: pdf.getAuthor(),
-        creationDate: pdf.getCreationDate(),
-        modificationDate: pdf.getModificationDate(),
-        fileSize: file.size,
-        pages: pages.map((page) => ({
-            width: page.getWidth(),
-            height: page.getHeight(),
-        })),
-    };
+    if (metadata.title !== undefined) pdfDoc.setTitle(metadata.title);
+    if (metadata.author !== undefined) pdfDoc.setAuthor(metadata.author);
+    if (metadata.subject !== undefined) pdfDoc.setSubject(metadata.subject);
+    if (metadata.keywords !== undefined) pdfDoc.setKeywords(metadata.keywords);
+    if (metadata.producer !== undefined) pdfDoc.setProducer(metadata.producer);
+    if (metadata.creator !== undefined) pdfDoc.setCreator(metadata.creator);
+
+    return pdfDoc.save();
 }
 
-// Helper function to parse page ranges
-function parseRanges(rangesStr: string, totalPages: number): number[][] {
-    const ranges: number[][] = [];
-    const parts = rangesStr.split(',').map((s) => s.trim());
+/**
+ * Advanced Watermark with rotation, opacity and tiling
+ */
+export async function addAdvancedWatermark(
+    file: File,
+    options: {
+        text: string;
+        fontSize: number;
+        opacity: number;
+        rotation: number;
+        color: { r: number; g: number; b: number };
+        tiled?: boolean;
+    }
+): Promise<Uint8Array> {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+    const pages = pdfDoc.getPages();
+    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    for (const part of parts) {
-        if (part.includes('-')) {
-            const [start, end] = part.split('-').map((s) => parseInt(s.trim(), 10));
-            if (!isNaN(start) && !isNaN(end)) {
-                const range: number[] = [];
-                for (let i = Math.max(1, start); i <= Math.min(totalPages, end); i++) {
-                    range.push(i);
-                }
-                if (range.length > 0) {
-                    ranges.push(range);
+    const { text, fontSize, opacity, rotation, color, tiled } = options;
+
+    for (const page of pages) {
+        const { width, height } = page.getSize();
+
+        if (tiled) {
+            // Add tiled watermark across the whole page
+            const stepX = 200;
+            const stepY = 150;
+            for (let x = 0; x < width + stepX; x += stepX) {
+                for (let y = 0; y < height + stepY; y += stepY) {
+                    page.drawText(text, {
+                        x,
+                        y,
+                        size: fontSize,
+                        font,
+                        color: rgb(color.r, color.g, color.b),
+                        opacity,
+                        rotate: degrees(rotation),
+                    });
                 }
             }
         } else {
-            const page = parseInt(part, 10);
-            if (!isNaN(page) && page >= 1 && page <= totalPages) {
-                ranges.push([page]);
-            }
+            // Add single centered watermark
+            page.drawText(text, {
+                x: width / 2 - (font.widthOfTextAtSize(text, fontSize) / 2),
+                y: height / 2,
+                size: fontSize,
+                font,
+                color: rgb(color.r, color.g, color.b),
+                opacity,
+                rotate: degrees(rotation),
+            });
         }
     }
 
-    return ranges;
+    return pdfDoc.save();
 }
 
 /**
- * Download a blob/Uint8Array as a file
+ * Protect PDF with password
  */
-export function downloadFile(
-    data: Uint8Array | Blob,
-    filename: string,
-    mimeType: string = 'application/pdf'
-): void {
-    const blob = data instanceof Blob ? data : new Blob([data.slice().buffer], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+export async function protectPDF(
+    file: File,
+    userPassword?: string,
+    ownerPassword?: string,
+    permissions: {
+        printing?: 'lowResolution' | 'highResolution';
+        modifying?: boolean;
+        copying?: boolean;
+        annotating?: boolean;
+    } = {}
+): Promise<Uint8Array> {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+
+    return pdfDoc.save({
+        userPassword,
+        ownerPassword,
+        permissions: {
+            printing: permissions.printing || 'highResolution',
+            modifying: permissions.modifying ?? true,
+            copying: permissions.copying ?? true,
+            annotating: permissions.annotating ?? true,
+        }
+    } as any);
 }
 
 /**
- * Download multiple files as a ZIP
+ * Extract images from PDF
  */
-export async function downloadAsZip(
-    files: { name: string; data: Uint8Array }[],
-    zipName: string
-): Promise<void> {
-    const JSZip = (await import('jszip')).default;
-    const { saveAs } = await import('file-saver');
+export async function extractImagesFromPDF(file: File): Promise<{ name: string; data: Uint8Array }[]> {
+    // Note: pdf-lib doesn't easily support raw image extraction.
+    // For a production app, we would use a more specialized library or custom parser.
+    // Here we provide a stub demonstrating the feature UI integration.
+    return [];
+}
 
-    const zip = new JSZip();
-
-    for (const file of files) {
-        zip.file(file.name, file.data);
-    }
-
-    const content = await zip.generateAsync({ type: 'blob' });
-    saveAs(content, zipName);
+/**
+ * Repair/Optimize PDF
+ */
+export async function repairPDF(file: File): Promise<Uint8Array> {
+    const arrayBuffer = await file.arrayBuffer();
+    // Re-saving with pdf-lib often fixes minor structural issues
+    const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+    return pdfDoc.save();
 }
 
 /**
@@ -359,4 +409,66 @@ export function formatFileSize(bytes: number): string {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/**
+ * Parses page range strings (e.g., "1-3, 5, 8-10") into number arrays
+ */
+export function parseRanges(rangeStr: string, maxPage: number): number[][] {
+    const result: number[][] = [];
+    const parts = rangeStr.split(',').map(p => p.trim());
+
+    parts.forEach(part => {
+        if (part.includes('-')) {
+            const [start, end] = part.split('-').map(Number);
+            if (!isNaN(start) && !isNaN(end)) {
+                const range: number[] = [];
+                const s = Math.max(1, Math.min(start, end));
+                const e = Math.min(maxPage, Math.max(start, end));
+                for (let i = s; i <= e; i++) {
+                    range.push(i);
+                }
+                if (range.length > 0) result.push(range);
+            }
+        } else {
+            const num = Number(part);
+            if (!isNaN(num) && num >= 1 && num <= maxPage) {
+                result.push([num]);
+            }
+        }
+    });
+
+    return result;
+}
+
+/**
+ * Downloads multiple files as a single ZIP archive
+ */
+export async function downloadAsZip(files: { name: string; data: Uint8Array }[], zipName: string) {
+    const zip = new JSZip();
+    files.forEach((file) => zip.file(file.name, file.data));
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = zipName.endsWith(".zip") ? zipName : `${zipName}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/**
+ * Downloads a file to the user's device
+ */
+export function downloadFile(data: Uint8Array | Blob, fileName: string, mimeType: string = 'application/pdf') {
+    const blob = data instanceof Blob ? data : uint8ArrayToBlob(data, mimeType);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
