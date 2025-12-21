@@ -19,29 +19,29 @@ const socials = [
     {
         name: "Email",
         icon: Mail,
-        href: "mailto:arshverma@example.com",
-        label: "arshverma@example.com",
+        href: "mailto:Arshverma.dev@gmail.com",
+        label: "Arshverma.dev@gmail.com",
         color: "hover:bg-red-50 hover:text-red-600 hover:border-red-200",
     },
     {
         name: "LinkedIn",
         icon: Linkedin,
-        href: "https://linkedin.com/in/arshverma",
-        label: "linkedin.com/in/arshverma",
+        href: "https://www.linkedin.com/in/arshvermadev/",
+        label: "linkedin.com/in/arshvermadev",
         color: "hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200",
     },
     {
         name: "GitHub",
         icon: Github,
-        href: "https://github.com/arshverma",
-        label: "github.com/arshverma",
+        href: "https://github.com/ArshVermaGit",
+        label: "github.com/ArshVermaGit",
         color: "hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300",
     },
     {
         name: "X (Twitter)",
         icon: Twitter,
-        href: "https://x.com/arshverma",
-        label: "x.com/arshverma",
+        href: "https://x.com/TheArshVerma",
+        label: "x.com/TheArshVerma",
         color: "hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300",
     },
 ];
@@ -133,7 +133,7 @@ export default function AboutPage() {
 
                         <div className="flex flex-wrap gap-3">
                             <Link
-                                href="https://arshcreates.com"
+                                href="https://arshcreates.vercel.app/"
                                 target="_blank"
                                 className="btn-primary inline-flex items-center gap-2"
                             >
@@ -141,7 +141,7 @@ export default function AboutPage() {
                                 <ExternalLink className="w-4 h-4" />
                             </Link>
                             <Link
-                                href="mailto:arshverma@example.com"
+                                href="mailto:Arshverma.dev@gmail.com"
                                 className="btn-secondary inline-flex items-center gap-2"
                             >
                                 <Mail className="w-4 h-4" />
