@@ -4,15 +4,15 @@ export const dynamic = "force-dynamic";
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, Type, Pencil, ArrowRight, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Upload, File, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, Type, Pencil, ArrowRight, ChevronLeft, ChevronRight, Trash2, Square, Circle, Image as ImageIcon, MousePointer2, Settings, Plus, Minus, Move } from "lucide-react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 
-type Tool = "text" | "draw" | "rectangle" | "circle" | "select";
+type Tool = "text" | "draw" | "rectangle" | "circle" | "image" | "select";
 
 interface Annotation {
     id: string;
-    type: "text" | "draw" | "rectangle" | "circle";
+    type: "text" | "draw" | "rectangle" | "circle" | "image";
     page: number;
     x: number;
     y: number;
@@ -20,6 +20,9 @@ interface Annotation {
     height?: number;
     content?: string;
     color: string;
+    opacity?: number;
+    strokeWidth?: number;
+    fontSize?: number;
     path?: { x: number; y: number }[];
 }
 
@@ -41,7 +44,16 @@ export default function EditPDFPage() {
     const [textPosition, setTextPosition] = useState({ x: 0, y: 0 });
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
+    const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+    const [zoom, setZoom] = useState(1);
+    const [currentStrokeWidth, setCurrentStrokeWidth] = useState(2);
+    const [currentFontSize, setCurrentFontSize] = useState(14);
+    const [currentOpacity, setCurrentOpacity] = useState(1);
     const canvasRef = useRef<HTMLDivElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
+    const startX = useRef(0);
+    const startY = useRef(0);
+    const [isCreating, setIsCreating] = useState(false);
 
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
@@ -64,7 +76,8 @@ export default function EditPDFPage() {
     const loadPdfPreview = async (pdfFile: File) => {
         try {
             const pdfjsLib = await import("pdfjs-dist");
-            pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+            const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+            pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
             const arrayBuffer = await pdfFile.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -94,8 +107,33 @@ export default function EditPDFPage() {
         }
     };
 
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (re) => {
+                const content = re.target?.result as string;
+                const annotation: Annotation = {
+                    id: `image-${Date.now()}`,
+                    type: "image",
+                    page: currentPage,
+                    x: 20,
+                    y: 20,
+                    width: 30,
+                    height: 30,
+                    content,
+                    color: "transparent",
+                    opacity: 1
+                };
+                setAnnotations(prev => [...prev, annotation]);
+                setSelectedAnnotationId(annotation.id);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (selectedTool !== "text") return;
+        if ((selectedTool as string) !== "text") return;
 
         const rect = e.currentTarget.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -107,46 +145,87 @@ export default function EditPDFPage() {
     };
 
     const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (selectedTool !== "draw") return;
-
         const rect = e.currentTarget.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-        setIsDrawing(true);
-        setCurrentPath([{ x, y }]);
+        startX.current = x;
+        startY.current = y;
+
+        if (selectedTool === "draw") {
+            setIsDrawing(true);
+            setCurrentPath([{ x, y }]);
+            setSelectedAnnotationId(null);
+        } else if (selectedTool === "rectangle" || selectedTool === "circle") {
+            setIsCreating(true);
+            const newId = `${selectedTool}-${Date.now()}`;
+            const newAnnotation: Annotation = {
+                id: newId,
+                type: selectedTool,
+                page: currentPage,
+                x,
+                y,
+                width: 0,
+                height: 0,
+                color: currentColor,
+                opacity: currentOpacity,
+                strokeWidth: currentStrokeWidth,
+            };
+            setAnnotations(prev => [...prev, newAnnotation]);
+            setSelectedAnnotationId(newId);
+        } else if (selectedTool === "select") {
+            const clickedAnnotation = [...annotations]
+                .reverse()
+                .find(a =>
+                    a.page === currentPage &&
+                    x >= (a.x || 0) && x <= (a.x || 0) + (a.width || 5) &&
+                    y >= (a.y || 0) && y <= (a.y || 0) + (a.height || 5)
+                );
+            setSelectedAnnotationId(clickedAnnotation?.id || null);
+        }
     };
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!isDrawing || selectedTool !== "draw") return;
-
         const rect = e.currentTarget.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-        setCurrentPath(prev => [...prev, { x, y }]);
+        if (isDrawing && selectedTool === "draw") {
+            setCurrentPath(prev => [...prev, { x, y }]);
+        } else if (isCreating && selectedAnnotationId) {
+            setAnnotations(prev => prev.map(a => {
+                if (a.id === selectedAnnotationId) {
+                    return {
+                        ...a,
+                        width: Math.abs(x - startX.current),
+                        height: Math.abs(y - startY.current),
+                        x: Math.min(x, startX.current),
+                        y: Math.min(y, startY.current),
+                    };
+                }
+                return a;
+            }));
+        }
     };
 
     const handleMouseUp = () => {
-        if (!isDrawing || currentPath.length < 2) {
-            setIsDrawing(false);
-            setCurrentPath([]);
-            return;
+        if (isDrawing && currentPath.length > 1) {
+            const annotation: Annotation = {
+                id: `draw-${Date.now()}`,
+                type: "draw",
+                page: currentPage,
+                x: 0,
+                y: 0,
+                color: currentColor,
+                path: currentPath,
+                strokeWidth: currentStrokeWidth,
+                opacity: currentOpacity,
+            };
+            setAnnotations(prev => [...prev, annotation]);
         }
-
-        const annotation: Annotation = {
-            id: `draw-${Date.now()}`,
-            type: "draw",
-            page: currentPage,
-            x: 0,
-            y: 0,
-            color: currentColor,
-            path: currentPath,
-        };
-
-        setAnnotations(prev => [...prev, annotation]);
         setIsDrawing(false);
         setCurrentPath([]);
+        setIsCreating(false);
     };
 
     const addTextAnnotation = () => {
@@ -163,15 +242,23 @@ export default function EditPDFPage() {
             y: textPosition.y,
             content: textInput,
             color: currentColor,
+            fontSize: currentFontSize,
+            opacity: currentOpacity,
         };
 
         setAnnotations(prev => [...prev, annotation]);
+        setSelectedAnnotationId(annotation.id);
         setIsAddingText(false);
         setTextInput("");
     };
 
     const deleteAnnotation = (id: string) => {
         setAnnotations(prev => prev.filter(a => a.id !== id));
+        if (selectedAnnotationId === id) setSelectedAnnotationId(null);
+    };
+
+    const updateAnnotationProperty = (id: string, property: keyof Annotation, value: any) => {
+        setAnnotations(prev => prev.map(a => a.id === id ? { ...a, [property]: value } : a));
     };
 
     const handleApplyEdits = async () => {
@@ -189,25 +276,26 @@ export default function EditPDFPage() {
                 const page = pdf.getPage(annotation.page);
                 const { width, height } = page.getSize();
 
-                if (annotation.type === "text" && annotation.content) {
-                    const hexColor = annotation.color.replace("#", "");
-                    const r = parseInt(hexColor.substr(0, 2), 16) / 255;
-                    const g = parseInt(hexColor.substr(2, 2), 16) / 255;
-                    const b = parseInt(hexColor.substr(4, 2), 16) / 255;
+                const hexColor = (annotation.color || "#000000").replace("#", "");
+                let r = 0, g = 0, b = 0;
+                if (hexColor !== "transparent" && hexColor.length === 6) {
+                    r = parseInt(hexColor.substr(0, 2), 16) / 255;
+                    g = parseInt(hexColor.substr(2, 2), 16) / 255;
+                    b = parseInt(hexColor.substr(4, 2), 16) / 255;
+                }
+                const color = rgb(r, g, b);
+                const opacity = annotation.opacity ?? 1;
 
+                if (annotation.type === "text" && annotation.content) {
                     page.drawText(annotation.content, {
                         x: (annotation.x / 100) * width,
                         y: height - (annotation.y / 100) * height,
-                        size: 14,
+                        size: annotation.fontSize || 14,
                         font,
-                        color: rgb(r, g, b),
+                        color,
+                        opacity,
                     });
                 } else if (annotation.type === "draw" && annotation.path) {
-                    const hexColor = annotation.color.replace("#", "");
-                    const r = parseInt(hexColor.substr(0, 2), 16) / 255;
-                    const g = parseInt(hexColor.substr(2, 2), 16) / 255;
-                    const b = parseInt(hexColor.substr(4, 2), 16) / 255;
-
                     for (let i = 0; i < annotation.path.length - 1; i++) {
                         const start = annotation.path[i];
                         const end = annotation.path[i + 1];
@@ -221,9 +309,50 @@ export default function EditPDFPage() {
                                 x: (end.x / 100) * width,
                                 y: height - (end.y / 100) * height,
                             },
-                            thickness: 2,
-                            color: rgb(r, g, b),
+                            thickness: annotation.strokeWidth || 2,
+                            color,
+                            opacity,
                         });
+                    }
+                } else if (annotation.type === "rectangle") {
+                    page.drawRectangle({
+                        x: (annotation.x / 100) * width,
+                        y: height - (annotation.y / 100) * height - ((annotation.height || 0) / 100) * height,
+                        width: ((annotation.width || 0) / 100) * width,
+                        height: ((annotation.height || 0) / 100) * height,
+                        borderColor: color,
+                        borderWidth: annotation.strokeWidth || 2,
+                        opacity,
+                    });
+                } else if (annotation.type === "circle") {
+                    page.drawEllipse({
+                        x: (annotation.x / 100) * width + ((annotation.width || 0) / 200) * width,
+                        y: height - (annotation.y / 100) * height - ((annotation.height || 0) / 200) * height,
+                        xScale: ((annotation.width || 0) / 200) * width,
+                        yScale: ((annotation.height || 0) / 200) * height,
+                        borderColor: color,
+                        borderWidth: annotation.strokeWidth || 2,
+                        opacity,
+                    });
+                } else if (annotation.type === "image" && annotation.content) {
+                    try {
+                        const base64Data = annotation.content.split(',')[1];
+                        const imageBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+                        let embeddedImage;
+                        if (annotation.content.includes("image/png")) {
+                            embeddedImage = await pdf.embedPng(imageBytes);
+                        } else {
+                            embeddedImage = await pdf.embedJpg(imageBytes);
+                        }
+                        page.drawImage(embeddedImage, {
+                            x: (annotation.x / 100) * width,
+                            y: height - (annotation.y / 100) * height - ((annotation.height || 0) / 100) * height,
+                            width: ((annotation.width || 0) / 100) * width,
+                            height: ((annotation.height || 0) / 100) * height,
+                            opacity,
+                        });
+                    } catch (e) {
+                        console.error("Failed to embed image:", e);
                     }
                 }
             }
@@ -243,7 +372,7 @@ export default function EditPDFPage() {
         const url = URL.createObjectURL(resultBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "edited.pdf";
+        link.download = (file?.name.replace(".pdf", "") || "edited") + "_SimplyPDF.pdf";
         link.click();
         URL.revokeObjectURL(url);
     };
@@ -254,368 +383,463 @@ export default function EditPDFPage() {
         setResultBlob(null);
         setErrorMessage("");
         setCurrentPage(0);
+        setTotalPages(0);
         setPageImages([]);
         setAnnotations([]);
         setIsAddingText(false);
+        setSelectedAnnotationId(null);
     };
 
     const currentPageAnnotations = annotations.filter(a => a.page === currentPage);
+    const selectedAnnotation = annotations.find(a => a.id === selectedAnnotationId);
 
-    const colors = ["#000000", "#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6"];
+    const colors = ["#000000", "#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "transparent"];
 
     return (
-        <div className="min-h-[calc(100vh-80px)] pt-24 pb-16">
-            <div className="container mx-auto px-4">
-                <AnimatePresence mode="wait">
-                    {status === "idle" && (
+        <div className="min-h-[calc(100vh-80px)] pt-20 bg-gray-50/50 flex flex-col">
+            {/* Hidden Inputs */}
+            <input type="file" ref={imageInputRef} accept="image/*" className="hidden" onChange={handleImageUpload} />
+            <input id="file-input" type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
+
+            <AnimatePresence mode="wait">
+                {status === "idle" && (
+                    <div className="container mx-auto px-4 py-12">
                         <motion.div
-                            key="idle"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
                             className="max-w-4xl mx-auto"
                         >
                             <div className="text-center mb-12">
-                                <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-2xl mb-6">
-                                    <Type className="w-8 h-8" />
+                                <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-xl border border-gray-100 mb-6">
+                                    <Type className="w-8 h-8 text-black" />
                                 </div>
-                                <h1 className="text-4xl md:text-5xl font-bold mb-4">Edit PDF</h1>
+                                <h1 className="text-4xl md:text-5xl font-bold mb-4">Edit & Annotate</h1>
                                 <p className="text-gray-500 text-lg max-w-xl mx-auto">
-                                    Add text, annotations, and drawings to your PDF documents.
+                                    Professional tools to edit, draw, and enhance your PDFs in the browser.
                                 </p>
                             </div>
 
-                            <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-xl">
+                            <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-2xl shadow-black/5">
                                 <div
-                                    className={`relative flex flex-col items-center justify-center p-12 py-20 border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer ${dragActive ? "border-black bg-gray-50" : "border-gray-200 hover:border-gray-400"
+                                    className={`relative flex flex-col items-center justify-center p-12 py-24 border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer ${dragActive ? "border-black bg-gray-50/50" : "border-gray-200 hover:border-gray-400 hover:bg-gray-50/30"
                                         }`}
                                     onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                                     onDragLeave={() => setDragActive(false)}
                                     onDrop={handleDrop}
                                     onClick={() => document.getElementById("file-input")?.click()}
                                 >
-                                    <input
-                                        id="file-input"
-                                        type="file"
-                                        accept=".pdf"
-                                        className="hidden"
-                                        onChange={handleFileChange}
-                                    />
-                                    <Upload className="w-12 h-12 text-gray-400 mb-4" />
-                                    <p className="text-lg font-medium mb-2">Drop your PDF here</p>
-                                    <p className="text-gray-400 text-sm">or click to browse</p>
+                                    <Upload className="w-16 h-16 text-gray-300 mb-6" />
+                                    <p className="text-xl font-semibold mb-2">Drop your PDF here</p>
+                                    <p className="text-gray-400">or click to browse from your computer</p>
                                 </div>
                             </div>
+                        </motion.div>
+                    </div>
+                )}
 
-                            <div className="mt-12 grid grid-cols-3 gap-6 text-center">
+                {status === "editing" && (
+                    <motion.div
+                        key="editing"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex-1 flex overflow-hidden"
+                    >
+                        {/* LEFT: Floating Toolbar */}
+                        <div className="w-20 flex flex-col border-r border-gray-200 bg-white py-6 items-center gap-4 z-10 shrink-0">
+                            <div className="flex flex-col gap-2 p-1.5 bg-gray-100 rounded-2xl">
                                 {[
-                                    { label: "100% Free", desc: "No hidden fees" },
-                                    { label: "Private", desc: "Files stay on device" },
-                                    { label: "Fast", desc: "Instant processing" },
-                                ].map((feature) => (
-                                    <div key={feature.label} className="p-4">
-                                        <div className="font-semibold mb-1">{feature.label}</div>
-                                        <div className="text-gray-400 text-sm">{feature.desc}</div>
-                                    </div>
+                                    { id: "select", icon: MousePointer2, label: "Select" },
+                                    { id: "text", icon: Type, label: "Text" },
+                                    { id: "draw", icon: Pencil, label: "Draw" },
+                                    { id: "rectangle", icon: Square, label: "Rectangle" },
+                                    { id: "circle", icon: Circle, label: "Circle" },
+                                ].map((tool) => (
+                                    <button
+                                        key={tool.id}
+                                        onClick={() => setSelectedTool(tool.id as Tool)}
+                                        className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all ${selectedTool === tool.id
+                                            ? "bg-black text-white shadow-lg"
+                                            : "hover:bg-white text-gray-500 hover:text-black"
+                                            }`}
+                                        title={tool.label}
+                                    >
+                                        <tool.icon className="w-5 h-5" />
+                                    </button>
                                 ))}
                             </div>
-                        </motion.div>
-                    )}
 
-                    {status === "editing" && (
-                        <motion.div
-                            key="editing"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className="max-w-6xl mx-auto"
-                        >
-                            {/* Toolbar */}
-                            <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-6 shadow-lg flex items-center justify-between flex-wrap gap-4">
+                            <button
+                                onClick={() => imageInputRef.current?.click()}
+                                className="w-12 h-12 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-black transition-all"
+                                title="Add Image"
+                            >
+                                <ImageIcon className="w-5 h-5" />
+                            </button>
+
+                            <div className="mt-auto flex flex-col gap-2 items-center">
+                                <button
+                                    onClick={() => setZoom(prev => Math.min(prev + 0.1, 2))}
+                                    className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </button>
+                                <span className="text-[10px] font-bold text-gray-400">{Math.round(zoom * 100)}%</span>
+                                <button
+                                    onClick={() => setZoom(prev => Math.max(prev - 0.1, 0.5))}
+                                    className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500"
+                                >
+                                    <Minus className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* CENTER: Canvas Area */}
+                        <div className="flex-1 overflow-auto bg-gray-200/50 p-8 flex flex-col items-center">
+                            {/* Page Controls Overlay */}
+                            <div className="bg-white/80 backdrop-blur-md border border-gray-200 px-4 py-2 rounded-full flex items-center gap-6 shadow-sm mb-6 sticky top-0 z-20">
                                 <div className="flex items-center gap-2">
-                                    {[
-                                        { tool: "text" as const, icon: Type, label: "Text" },
-                                        { tool: "draw" as const, icon: Pencil, label: "Draw" },
-                                    ].map(({ tool, icon: Icon, label }) => (
-                                        <button
-                                            key={tool}
-                                            onClick={() => setSelectedTool(tool)}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${selectedTool === tool
-                                                ? "bg-black text-white"
-                                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                                }`}
-                                        >
-                                            <Icon className="w-4 h-4" />
-                                            {label}
-                                        </button>
-                                    ))}
+                                    <button
+                                        onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                                        disabled={currentPage === 0}
+                                        className="p-1.5 hover:bg-gray-100 rounded-md disabled:opacity-30"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    <span className="text-sm font-medium">Page {currentPage + 1} of {totalPages}</span>
+                                    <button
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                                        disabled={currentPage === totalPages - 1}
+                                        className="p-1.5 hover:bg-gray-100 rounded-md disabled:opacity-30"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
                                 </div>
-
-                                <div className="flex items-center gap-2">
-                                    {colors.map(color => (
-                                        <button
-                                            key={color}
-                                            onClick={() => setCurrentColor(color)}
-                                            className={`w-8 h-8 rounded-full border-2 transition-all ${currentColor === color ? "border-black scale-110" : "border-transparent"
-                                                }`}
-                                            style={{ backgroundColor: color }}
-                                        />
-                                    ))}
-                                </div>
-
+                                <div className="w-[1px] h-4 bg-gray-200" />
                                 <button
                                     onClick={handleApplyEdits}
-                                    disabled={annotations.length === 0}
-                                    className="btn-primary py-2 px-6 flex items-center gap-2 disabled:opacity-50"
+                                    className="px-4 py-1.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors flex items-center gap-2"
                                 >
+                                    <Download className="w-4 h-4" />
                                     Save PDF
-                                    <ArrowRight className="w-4 h-4" />
                                 </button>
                             </div>
 
-                            <div className="grid lg:grid-cols-4 gap-6">
-                                {/* PDF Canvas */}
-                                <div className="lg:col-span-3">
-                                    <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-lg">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="font-medium">Page {currentPage + 1} of {totalPages}</h3>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                                                    disabled={currentPage === 0}
-                                                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                                                >
-                                                    <ChevronLeft className="w-5 h-5" />
-                                                </button>
-                                                <button
-                                                    onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
-                                                    disabled={currentPage >= totalPages - 1}
-                                                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                                                >
-                                                    <ChevronRight className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                        </div>
+                            {/* Actual PDF Page Canvas */}
+                            <div
+                                ref={canvasRef}
+                                className="relative bg-white shadow-2xl origin-top transition-transform duration-200"
+                                style={{
+                                    width: (pageDimensions[currentPage]?.width || 0) * zoom,
+                                    height: (pageDimensions[currentPage]?.height || 0) * zoom,
+                                    cursor: selectedTool === "text" ? "text" : selectedTool === "select" ? "default" : "crosshair",
+                                }}
+                                onMouseDown={handleMouseDown}
+                                onMouseMove={handleMouseMove}
+                                onMouseUp={handleMouseUp}
+                                onClick={handleCanvasClick}
+                            >
+                                <img
+                                    src={pageImages[currentPage]}
+                                    alt={`Page ${currentPage + 1}`}
+                                    className="absolute inset-0 w-full h-full pointer-events-none select-none"
+                                />
 
-                                        <div
-                                            ref={canvasRef}
-                                            className="relative bg-gray-100 rounded-xl overflow-hidden cursor-crosshair"
-                                            style={{ aspectRatio: pageDimensions[currentPage] ? `${pageDimensions[currentPage].width} / ${pageDimensions[currentPage].height}` : "3/4" }}
-                                            onClick={handleCanvasClick}
-                                            onMouseDown={handleMouseDown}
-                                            onMouseMove={handleMouseMove}
-                                            onMouseUp={handleMouseUp}
-                                            onMouseLeave={handleMouseUp}
-                                        >
-                                            {pageImages[currentPage] && (
-                                                <img
-                                                    src={pageImages[currentPage]}
-                                                    alt={`Page ${currentPage + 1}`}
-                                                    className="w-full h-full object-contain pointer-events-none"
-                                                />
-                                            )}
-
-                                            {/* Render annotations */}
-                                            {currentPageAnnotations.map(annotation => (
-                                                <div key={annotation.id}>
-                                                    {annotation.type === "text" && (
-                                                        <div
-                                                            className="absolute text-sm font-medium group"
-                                                            style={{
-                                                                left: `${annotation.x}%`,
-                                                                top: `${annotation.y}%`,
-                                                                color: annotation.color,
-                                                            }}
-                                                        >
-                                                            {annotation.content}
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); deleteAnnotation(annotation.id); }}
-                                                                className="absolute -right-6 -top-1 opacity-0 group-hover:opacity-100 p-1 bg-red-500 text-white rounded transition-opacity"
-                                                            >
-                                                                <Trash2 className="w-3 h-3" />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                    {annotation.type === "draw" && annotation.path && (
-                                                        <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                                                            <path
-                                                                d={`M ${annotation.path.map(p => `${p.x}% ${p.y}%`).join(" L ")}`}
-                                                                stroke={annotation.color}
-                                                                strokeWidth="2"
-                                                                fill="none"
-                                                                vectorEffect="non-scaling-stroke"
-                                                            />
-                                                        </svg>
-                                                    )}
-                                                </div>
-                                            ))}
-
-                                            {/* Current drawing path */}
-                                            {isDrawing && currentPath.length > 0 && (
-                                                <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                                                    <path
-                                                        d={`M ${currentPath.map(p => `${p.x}% ${p.y}%`).join(" L ")}`}
-                                                        stroke={currentColor}
-                                                        strokeWidth="2"
-                                                        fill="none"
-                                                        vectorEffect="non-scaling-stroke"
-                                                    />
-                                                </svg>
-                                            )}
-
-                                            {/* Text input popup */}
-                                            {isAddingText && (
-                                                <div
-                                                    className="absolute bg-white shadow-xl rounded-lg p-3 border z-10"
-                                                    style={{
-                                                        left: `${textPosition.x}%`,
-                                                        top: `${textPosition.y}%`,
-                                                    }}
-                                                    onClick={e => e.stopPropagation()}
-                                                >
-                                                    <input
-                                                        type="text"
-                                                        value={textInput}
-                                                        onChange={e => setTextInput(e.target.value)}
-                                                        onKeyDown={e => e.key === "Enter" && addTextAnnotation()}
-                                                        placeholder="Enter text..."
-                                                        className="px-3 py-2 border rounded-lg focus:outline-none focus:border-black w-48"
-                                                        autoFocus
-                                                    />
-                                                    <div className="flex gap-2 mt-2">
-                                                        <button
-                                                            onClick={addTextAnnotation}
-                                                            className="flex-1 py-1 px-3 bg-black text-white rounded text-sm"
-                                                        >
-                                                            Add
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setIsAddingText(false)}
-                                                            className="flex-1 py-1 px-3 bg-gray-100 rounded text-sm"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Annotations panel */}
-                                <div className="lg:col-span-1">
-                                    <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-lg">
-                                        <h3 className="font-semibold mb-4">Annotations ({annotations.length})</h3>
-
-                                        {annotations.length === 0 ? (
-                                            <p className="text-gray-400 text-sm">
-                                                {selectedTool === "text"
-                                                    ? "Click on the PDF to add text"
-                                                    : "Draw on the PDF to annotate"}
-                                            </p>
-                                        ) : (
-                                            <div className="space-y-2 max-h-96 overflow-y-auto">
-                                                {annotations.map(annotation => (
-                                                    <div
-                                                        key={annotation.id}
-                                                        className="flex items-center justify-between p-2 rounded-lg bg-gray-50"
-                                                    >
-                                                        <div className="flex items-center gap-2">
-                                                            <div
-                                                                className="w-3 h-3 rounded-full"
-                                                                style={{ backgroundColor: annotation.color }}
-                                                            />
-                                                            <span className="text-sm truncate max-w-32">
-                                                                {annotation.type === "text" ? annotation.content : "Drawing"}
-                                                            </span>
-                                                            <span className="text-xs text-gray-400">p.{annotation.page + 1}</span>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => deleteAnnotation(annotation.id)}
-                                                            className="p-1 hover:bg-red-100 rounded text-gray-400 hover:text-red-500"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                ))}
+                                {/* Render All Page Annotations */}
+                                {currentPageAnnotations.map((anno) => (
+                                    <div
+                                        key={anno.id}
+                                        onClick={(e) => {
+                                            if (selectedTool === "select") {
+                                                e.stopPropagation();
+                                                setSelectedAnnotationId(anno.id);
+                                            }
+                                        }}
+                                        className={`absolute select-none ${selectedAnnotationId === anno.id ? "ring-2 ring-blue-500 ring-offset-2 z-10" : ""
+                                            }`}
+                                        style={{
+                                            left: `${anno.x}%`,
+                                            top: `${anno.y}%`,
+                                            width: anno.width ? `${anno.width}%` : "auto",
+                                            height: anno.height ? `${anno.height}%` : "auto",
+                                            color: anno.color,
+                                            opacity: anno.opacity,
+                                            cursor: selectedTool === "select" ? "move" : "inherit"
+                                        }}
+                                    >
+                                        {anno.type === "text" && (
+                                            <div style={{ fontSize: `${(anno.fontSize || 14) * zoom}px`, whiteSpace: "nowrap" }}>
+                                                {anno.content}
                                             </div>
                                         )}
-
-                                        <button
-                                            onClick={reset}
-                                            className="w-full mt-4 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50"
-                                        >
-                                            Cancel
-                                        </button>
+                                        {anno.type === "rectangle" && (
+                                            <div
+                                                className="w-full h-full border-2"
+                                                style={{ borderColor: anno.color, borderWidth: anno.strokeWidth }}
+                                            />
+                                        )}
+                                        {anno.type === "circle" && (
+                                            <div
+                                                className="w-full h-full border-2 rounded-full"
+                                                style={{ borderColor: anno.color, borderWidth: anno.strokeWidth }}
+                                            />
+                                        )}
+                                        {anno.type === "image" && anno.content && (
+                                            <img src={anno.content} alt="" className="w-full h-full" />
+                                        )}
+                                        {anno.type === "draw" && anno.path && (
+                                            <svg
+                                                className="absolute inset-0 pointer-events-none overflow-visible"
+                                                style={{ width: "100%", height: "100%" }}
+                                            >
+                                                <polyline
+                                                    points={anno.path.map(p => `${(p.x - anno.x)}%,${(p.y - anno.y)}%`).join(" ")}
+                                                    fill="none"
+                                                    stroke={anno.color}
+                                                    strokeWidth={anno.strokeWidth || 2}
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+                                            </svg>
+                                        )}
                                     </div>
+                                ))}
+
+                                {/* Overlay for Text Input */}
+                                {isAddingText && (
+                                    <div
+                                        className="absolute z-20 bg-white shadow-xl border border-gray-200 rounded-lg p-2 flex flex-col gap-2"
+                                        style={{ left: `${textPosition.x}%`, top: `${textPosition.y}%` }}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <textarea
+                                            autoFocus
+                                            value={textInput}
+                                            onChange={(e) => setTextInput(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    addTextAnnotation();
+                                                }
+                                            }}
+                                            placeholder="Type something..."
+                                            className="w-48 h-20 text-sm p-2 bg-gray-50 border border-gray-100 rounded outline-none resize-none"
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={() => setIsAddingText(false)} className="text-[10px] text-gray-400 hover:text-black">Cancel</button>
+                                            <button onClick={addTextAnnotation} className="px-2 py-1 bg-black text-white text-[10px] rounded">Add</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Rendering Current Drawing Path */}
+                                {isDrawing && (
+                                    <svg className="absolute inset-0 pointer-events-none z-10 overflow-visible">
+                                        <polyline
+                                            points={currentPath.map(p => `${p.x}%,${p.y}%`).join(" ")}
+                                            fill="none"
+                                            stroke={currentColor}
+                                            strokeWidth={currentStrokeWidth}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            style={{ opacity: currentOpacity }}
+                                        />
+                                    </svg>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* RIGHT: Property & Layer Sidebar */}
+                        <div className="w-80 flex flex-col border-l border-gray-200 bg-white overflow-y-auto">
+                            {/* Properties Section */}
+                            <div className="p-6 border-b border-gray-100">
+                                <div className="flex items-center gap-2 mb-6">
+                                    <Settings className="w-4 h-4" />
+                                    <h3 className="font-bold uppercase tracking-wider text-xs">Properties</h3>
+                                </div>
+
+                                <div className="flex flex-col gap-6">
+                                    {/* Color Picker */}
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase mb-3 block">Color</label>
+                                        <div className="grid grid-cols-7 gap-2">
+                                            {colors.map(c => (
+                                                <button
+                                                    key={c}
+                                                    onClick={() => {
+                                                        setCurrentColor(c);
+                                                        if (selectedAnnotationId) updateAnnotationProperty(selectedAnnotationId, "color", c);
+                                                    }}
+                                                    className={`w-7 h-7 rounded-lg border-2 transition-all ${c === (selectedAnnotation?.color || currentColor) ? "scale-110 border-blue-500 shadow-md" : "border-transparent"}`}
+                                                    style={{ backgroundColor: c === "transparent" ? "white" : c, backgroundImage: c === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 50%, #ccc 50%, #ccc 75%, transparent 75%, transparent)" : "none", backgroundSize: "8px 8px" }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Size / Stroke Slider */}
+                                    <div>
+                                        <div className="flex justify-between mb-2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase">
+                                                {selectedAnnotation?.type === "text" ? "Font Size" : "Stroke Weight"}
+                                            </label>
+                                            <span className="text-[10px] font-bold">{selectedAnnotation?.type === "text" ? (selectedAnnotation.fontSize || currentFontSize) : (selectedAnnotation?.strokeWidth || currentStrokeWidth)}px</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min={selectedAnnotation?.type === "text" ? "8" : "1"}
+                                            max={selectedAnnotation?.type === "text" ? "48" : "20"}
+                                            value={selectedAnnotation?.type === "text" ? (selectedAnnotation.fontSize || currentFontSize) : (selectedAnnotation?.strokeWidth || currentStrokeWidth)}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value);
+                                                if (selectedAnnotationId) {
+                                                    updateAnnotationProperty(selectedAnnotationId, selectedAnnotation?.type === "text" ? "fontSize" : "strokeWidth", val);
+                                                } else {
+                                                    if (selectedTool === "text") setCurrentFontSize(val);
+                                                    else setCurrentStrokeWidth(val);
+                                                }
+                                            }}
+                                            className="w-full accent-black h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                                        />
+                                    </div>
+
+                                    {/* Opacity Slider */}
+                                    <div>
+                                        <div className="flex justify-between mb-2">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase">Opacity</label>
+                                            <span className="text-[10px] font-bold">{Math.round((selectedAnnotation?.opacity || currentOpacity) * 100)}%</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="1"
+                                            step="0.1"
+                                            value={selectedAnnotation?.opacity || currentOpacity}
+                                            onChange={(e) => {
+                                                const val = parseFloat(e.target.value);
+                                                if (selectedAnnotationId) updateAnnotationProperty(selectedAnnotationId, "opacity", val);
+                                                else setCurrentOpacity(val);
+                                            }}
+                                            className="w-full accent-black h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                                        />
+                                    </div>
+
+                                    {selectedAnnotationId && (
+                                        <button
+                                            onClick={() => deleteAnnotation(selectedAnnotationId)}
+                                            className="flex items-center justify-center gap-2 p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors mt-2"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                            <span className="text-xs font-bold uppercase">Delete Annotation</span>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
-                        </motion.div>
-                    )}
 
-                    {status === "processing" && (
-                        <motion.div
-                            key="processing"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex flex-col items-center justify-center py-32 max-w-lg mx-auto text-center"
-                        >
-                            <div className="relative mb-8">
-                                <div className="w-24 h-24 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
-                                <Loader2 className="w-10 h-10 text-black absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                            {/* Layers / Annotations List */}
+                            <div className="p-6 flex-1 overflow-y-auto">
+                                <div className="flex items-center gap-2 mb-6">
+                                    <Move className="w-4 h-4" />
+                                    <h3 className="font-bold uppercase tracking-wider text-xs">Page Layers</h3>
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                    {currentPageAnnotations.length === 0 ? (
+                                        <p className="text-[10px] text-gray-400 italic text-center py-8">No annotations on this page yet.</p>
+                                    ) : (
+                                        currentPageAnnotations.map((anno, idx) => (
+                                            <button
+                                                key={anno.id}
+                                                onClick={() => setSelectedAnnotationId(anno.id)}
+                                                className={`w-full p-3 rounded-xl border text-left flex items-center gap-3 transition-all ${selectedAnnotationId === anno.id
+                                                    ? "border-black bg-black text-white shadow-md scale-[1.02]"
+                                                    : "border-gray-100 hover:border-gray-300 bg-gray-50/50"
+                                                    }`}
+                                            >
+                                                <div className={`p-1.5 rounded-lg ${selectedAnnotationId === anno.id ? "bg-white/20" : "bg-white"}`}>
+                                                    {anno.type === "text" && <Type className="w-3 h-3" />}
+                                                    {anno.type === "draw" && <Pencil className="w-3 h-3" />}
+                                                    {anno.type === "rectangle" && <Square className="w-3 h-3" />}
+                                                    {anno.type === "circle" && <Circle className="w-3 h-3" />}
+                                                    {anno.type === "image" && <ImageIcon className="w-3 h-3" />}
+                                                </div>
+                                                <div className="flex-1 overflow-hidden">
+                                                    <p className="text-[10px] font-bold uppercase opacity-60">Layer {idx + 1}</p>
+                                                    <p className="text-xs font-medium truncate">
+                                                        {anno.type === "text" ? (anno.content || "Text") : anno.type.charAt(0).toUpperCase() + anno.type.slice(1)}
+                                                    </p>
+                                                </div>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
                             </div>
-                            <h2 className="text-2xl font-bold mb-2">Applying edits...</h2>
-                            <p className="text-gray-500">This won&apos;t take long...</p>
-                        </motion.div>
-                    )}
+                        </div>
+                    </motion.div>
+                )}
 
-                    {status === "success" && (
-                        <motion.div
-                            key="success"
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
-                        >
-                            <div className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mb-8">
-                                <CheckCircle2 className="w-10 h-10" />
-                            </div>
-                            <h2 className="text-3xl font-bold mb-2">PDF Edited Successfully!</h2>
-                            <p className="text-gray-500 mb-10">Your annotations have been applied to the document.</p>
+                {status === "processing" && (
+                    <motion.div
+                        key="processing"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex flex-col items-center justify-center py-32 max-w-lg mx-auto text-center"
+                    >
+                        <div className="relative mb-8">
+                            <div className="w-24 h-24 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
+                            <Loader2 className="w-10 h-10 text-black absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2">Applying edits...</h2>
+                        <p className="text-gray-500">This won&apos;t take long...</p>
+                    </motion.div>
+                )}
 
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <button onClick={handleDownload} className="btn-primary py-4 px-10 flex items-center gap-2">
-                                    <Download className="w-5 h-5" />
-                                    Download PDF
-                                </button>
-                                <button onClick={reset} className="btn-outline py-4 px-10 flex items-center gap-2">
-                                    <RefreshCw className="w-5 h-5" />
-                                    Edit Another
-                                </button>
-                            </div>
-                        </motion.div>
-                    )}
+                {status === "success" && (
+                    <motion.div
+                        key="success"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
+                    >
+                        <div className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mb-8">
+                            <CheckCircle2 className="w-10 h-10" />
+                        </div>
+                        <h2 className="text-3xl font-bold mb-2">PDF Edited Successfully!</h2>
+                        <p className="text-gray-500 mb-10">Your annotations have been applied to the document.</p>
 
-                    {status === "error" && (
-                        <motion.div
-                            key="error"
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
-                        >
-                            <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-8">
-                                <AlertCircle className="w-10 h-10" />
-                            </div>
-                            <h2 className="text-3xl font-bold mb-2">Something went wrong</h2>
-                            <p className="text-gray-500 mb-10">{errorMessage}</p>
-
-                            <button onClick={reset} className="btn-primary py-4 px-10 flex items-center gap-2">
-                                <RefreshCw className="w-5 h-5" />
-                                Try Again
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <button onClick={handleDownload} className="btn-primary py-4 px-10 flex items-center gap-2">
+                                <Download className="w-5 h-5" />
+                                Download PDF
                             </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                            <button onClick={reset} className="btn-outline py-4 px-10 flex items-center gap-2">
+                                <RefreshCw className="w-5 h-5" />
+                                Edit Another
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {status === "error" && (
+                    <motion.div
+                        key="error"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
+                    >
+                        <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-8">
+                            <AlertCircle className="w-10 h-10" />
+                        </div>
+                        <h2 className="text-3xl font-bold mb-2">Something went wrong</h2>
+                        <p className="text-gray-500 mb-10">{errorMessage}</p>
+
+                        <button onClick={reset} className="btn-primary py-4 px-10 flex items-center gap-2">
+                            <RefreshCw className="w-5 h-5" />
+                            Try Again
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
