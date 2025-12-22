@@ -15,6 +15,7 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { useHistory } from "@/context/HistoryContext";
 
 interface PageInfo {
     id: string;
@@ -24,6 +25,7 @@ interface PageInfo {
 }
 
 export default function OrganizePDFPage() {
+    const { addToHistory } = useHistory();
     const [file, setFile] = useState<File | null>(null);
     const [pages, setPages] = useState<PageInfo[]>([]);
     const [status, setStatus] = useState<"idle" | "loading" | "ready" | "processing" | "success" | "error">("idle");
@@ -140,6 +142,10 @@ export default function OrganizePDFPage() {
             const pdfBytes = await newPdf.save();
             setResultBlob(uint8ArrayToBlob(pdfBytes));
             setStatus("success");
+
+            if (file) {
+                addToHistory("Organized PDF", file.name, "Pages reordered/deleted");
+            }
         } catch (error) {
             console.error(error);
             setErrorMessage("Failed to organize PDF. Please try again.");
