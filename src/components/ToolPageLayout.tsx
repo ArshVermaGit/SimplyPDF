@@ -12,6 +12,7 @@ import {
     ToolCard,
     ProcessingState
 } from "./ToolPageElements";
+import { useHistory } from "@/context/HistoryContext";
 
 interface ToolPageLayoutProps {
     title: string;
@@ -26,6 +27,7 @@ interface ToolPageLayoutProps {
     successDescription: string;
     downloadFileName: string;
     onProcess: (files: File[]) => Promise<Blob | null>;
+    historyAction?: string; // Optional action name for history
 }
 
 // Success particles animation
@@ -74,7 +76,9 @@ export function ToolPageLayout({
     successDescription,
     downloadFileName,
     onProcess,
+    historyAction,
 }: ToolPageLayoutProps) {
+    const { addToHistory } = useHistory();
     const [files, setFiles] = useState<File[]>([]);
     const [status, setStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
@@ -97,6 +101,14 @@ export function ToolPageLayout({
                 setStatus("success");
                 setShowParticles(true);
                 setTimeout(() => setShowParticles(false), 1500);
+
+                // Add to history if historyAction is provided
+                if (historyAction) {
+                    const details = files.length === 1
+                        ? "1 file processed"
+                        : `${files.length} files processed`;
+                    addToHistory(historyAction, downloadFileName, details);
+                }
             } else {
                 throw new Error("Processing failed");
             }
