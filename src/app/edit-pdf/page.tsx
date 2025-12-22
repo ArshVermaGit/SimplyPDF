@@ -14,6 +14,7 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { useHistory } from "@/context/HistoryContext";
 
 type Tool = "text" | "draw" | "rectangle" | "circle" | "image" | "select";
 
@@ -34,6 +35,7 @@ interface Annotation {
 }
 
 export default function EditPDFPage() {
+    const { addToHistory } = useHistory();
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<"idle" | "editing" | "processing" | "success" | "error">("idle");
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
@@ -367,6 +369,10 @@ export default function EditPDFPage() {
             const pdfBytes = await pdf.save();
             setResultBlob(uint8ArrayToBlob(pdfBytes));
             setStatus("success");
+
+            if (file) {
+                addToHistory("Edited PDF", file.name, `${annotations.length} annotations added`);
+            }
         } catch (error) {
             console.error(error);
             setErrorMessage("Failed to apply edits. Please try again.");
