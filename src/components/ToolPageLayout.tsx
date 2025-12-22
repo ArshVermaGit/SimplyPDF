@@ -28,6 +28,11 @@ interface ToolPageLayoutProps {
     downloadFileName: string;
     onProcess: (files: File[]) => Promise<Blob | null>;
     historyAction?: string; // Optional action name for history
+
+    // Educational content props
+    howItWorks?: { title: string; steps: string[] };
+    benefits?: { title: string; items: { title: string; desc: string }[] };
+    faqs?: { question: string; answer: string }[];
 }
 
 // Success particles animation
@@ -77,6 +82,9 @@ export function ToolPageLayout({
     downloadFileName,
     onProcess,
     historyAction,
+    howItWorks,
+    benefits,
+    faqs,
 }: ToolPageLayoutProps) {
     const { addToHistory } = useHistory();
     const [files, setFiles] = useState<File[]>([]);
@@ -343,7 +351,16 @@ export function ToolPageLayout({
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                <EducationalContent
+                    howItWorks={howItWorks}
+                    benefits={benefits}
+                    faqs={faqs}
+                />
             </div>
         </div>
     );
 }
+
+import { EducationalContent } from "./EducationalContent";
+
