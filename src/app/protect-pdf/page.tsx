@@ -12,8 +12,10 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { useHistory } from "@/context/HistoryContext";
 
 export default function ProtectPDFPage() {
+    const { addToHistory } = useHistory();
     const [file, setFile] = useState<File | null>(null);
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -81,6 +83,10 @@ export default function ProtectPDFPage() {
             const pdfBytes = await pdf.save();
             setResultBlob(uint8ArrayToBlob(pdfBytes));
             setStatus("success");
+
+            if (file) {
+                addToHistory("Protected PDF", file.name, "Password protection added");
+            }
         } catch (error) {
             console.error(error);
             setErrorMessage("Failed to process PDF. Please try again.");
