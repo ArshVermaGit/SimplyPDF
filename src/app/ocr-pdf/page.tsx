@@ -13,8 +13,10 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { useHistory } from "@/context/HistoryContext";
 
 export default function OCRPDFPage() {
+    const { addToHistory } = useHistory();
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
     const [extractedText, setExtractedText] = useState("");
@@ -104,6 +106,11 @@ export default function OCRPDFPage() {
 
             setExtractedText(fullText.trim());
             setStatus("success");
+
+            if (file) {
+                addToHistory("OCR PDF", file.name, "Text extracted from PDF");
+            }
+
             await pdfDoc.destroy();
         } catch (error) {
             console.error(error);
