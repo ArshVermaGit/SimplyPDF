@@ -14,10 +14,12 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { useHistory } from "@/context/HistoryContext";
 
 type SignatureMode = "draw" | "type" | "upload";
 
 export default function SignPDFPage() {
+    const { addToHistory } = useHistory();
     const [file, setFile] = useState<File | null>(null);
     const [signatureMode, setSignatureMode] = useState<SignatureMode>("draw");
     const [signatureText, setSignatureText] = useState("");
@@ -226,6 +228,10 @@ export default function SignPDFPage() {
             const pdfBytes = await pdf.save();
             setResultBlob(uint8ArrayToBlob(pdfBytes));
             setStatus("success");
+
+            if (file) {
+                addToHistory("Signed PDF", file.name, `Signature added to page ${currentPage + 1}`);
+            }
         } catch (error) {
             console.error(error);
             setErrorMessage("Failed to apply signature. Please try again.");
