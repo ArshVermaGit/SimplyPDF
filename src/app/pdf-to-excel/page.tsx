@@ -13,8 +13,10 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { useHistory } from "@/context/HistoryContext";
 
 export default function PDFToExcelPage() {
+    const { addToHistory } = useHistory();
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
@@ -132,6 +134,11 @@ export default function PDFToExcelPage() {
 
             setResultBlob(blob);
             setStatus("success");
+
+            if (file) {
+                addToHistory("PDF to Excel", file.name, "Converted to Excel");
+            }
+
             await pdfDoc.destroy();
         } catch (error: any) {
             console.error(error);
