@@ -16,6 +16,7 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { EducationalContent } from "@/components/EducationalContent";
 
 interface PageInfo {
     id: string;
@@ -782,6 +783,40 @@ export default function MergePDFPage() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                <EducationalContent
+                    howItWorks={{
+                        title: "How to Merge PDF Files",
+                        steps: [
+                            "Upload your PDF files by dragging and dropping them or clicking 'Upload PDFs'.",
+                            "Arrange the files in your desired order. You can also rotate or remove specific pages.",
+                            "Click 'Merge & Save PDF' to combine them into a single high-quality document."
+                        ]
+                    }}
+                    benefits={{
+                        title: "Why Use Our PDF Merger?",
+                        items: [
+                            { title: "Completely Private", desc: "Your files never leave your browser. We don't upload or store your data on any server." },
+                            { title: "No File Limits", desc: "Merge as many PDFs as you need. Our tool is free forever with no hidden costs." },
+                            { title: "High Quality", desc: "Our merging process maintains the original quality and formatting of your documents." },
+                            { title: "Page Management", desc: "Easily reorder, rotate, or delete individual pages before merging for perfect results." }
+                        ]
+                    }}
+                    faqs={[
+                        {
+                            question: "Is there a limit to how many PDFs I can merge?",
+                            answer: "Currently, there is no hard limit on the number of files you can merge. However, performance depends on your device's memory since all processing happens locally in your browser."
+                        },
+                        {
+                            question: "Will the quality of my PDFs decrease after merging?",
+                            answer: "No, we use advanced PDF processing techniques that preserve the exact quality, fonts, and formatting of your original files."
+                        },
+                        {
+                            question: "Are my files safe and private?",
+                            answer: "Yes, SimplyPDF is unique because it works entirely in your web browser. Your files are never uploaded to any server, making it the most secure way to merge sensitive documents."
+                        }
+                    ]}
+                />
             </div>
 
             <PDFPreviewModal
