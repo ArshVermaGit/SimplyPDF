@@ -14,8 +14,10 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { useHistory } from "@/context/HistoryContext";
 
 export default function WordToPDFPage() {
+    const { addToHistory } = useHistory();
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
@@ -130,6 +132,10 @@ export default function WordToPDFPage() {
             const pdfBytes = await pdf.save();
             setResultBlob(uint8ArrayToBlob(pdfBytes));
             setStatus("success");
+
+            if (file) {
+                addToHistory("Word to PDF", file.name, "Converted to PDF");
+            }
         } catch (error) {
             console.error(error);
             setErrorMessage(error instanceof Error ? error.message : "Failed to convert document to PDF");
