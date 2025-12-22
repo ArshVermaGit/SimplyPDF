@@ -27,6 +27,7 @@ export default function JpgToPDFPage() {
             accept="image/jpeg,image/png,image/jpg,.jpg,.jpeg,.png"
             allowReorder={true}
             downloadFileName="images-to-pdf.pdf"
+            historyAction="JPG to PDF"
         />
     );
 }
