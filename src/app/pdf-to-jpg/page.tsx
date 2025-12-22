@@ -15,6 +15,7 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { useHistory } from "@/context/HistoryContext";
 
 interface ConvertedImage {
     name: string;
@@ -22,6 +23,7 @@ interface ConvertedImage {
 }
 
 export default function PDFToJPGPage() {
+    const { addToHistory } = useHistory();
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<"idle" | "loading" | "converting" | "success" | "error">("idle");
     const [images, setImages] = useState<ConvertedImage[]>([]);
@@ -84,6 +86,10 @@ export default function PDFToJPGPage() {
 
             setImages(convertedImages);
             setStatus("success");
+
+            if (pdfFile) {
+                addToHistory("PDF to JPG", pdfFile.name, `Converted to ${convertedImages.length} images`);
+            }
         } catch (error) {
             console.error(error);
             setErrorMessage("Failed to convert PDF to images.");
