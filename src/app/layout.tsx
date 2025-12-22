@@ -26,15 +26,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
+      <head />
+      <body className={`${inter.variable} font-sans antialiased min-h-screen flex flex-col`}>
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4266443141083729"
           crossOrigin="anonymous"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
-      </head>
-      <body className={`${inter.variable} font-sans antialiased min-h-screen flex flex-col`}>
         <Providers>
           <Header />
           <main className="flex-grow">
