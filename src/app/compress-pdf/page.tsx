@@ -26,6 +26,7 @@ export default function CompressPDFPage() {
             onProcess={handleCompress}
             multiple={false}
             downloadFileName="compressed.pdf"
+            historyAction="Compressed PDF"
         />
     );
 }
