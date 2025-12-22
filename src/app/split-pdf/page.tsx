@@ -14,6 +14,7 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { useHistory } from "@/context/HistoryContext";
 
 type SplitMode = "all" | "range" | "select" | "fixed_range" | "size_limit" | "manual";
 
@@ -30,6 +31,7 @@ interface VisualGroup {
 }
 
 export default function SplitPDFPage() {
+    const { addToHistory } = useHistory();
     const [file, setFile] = useState<File | null>(null);
     const [mode, setMode] = useState<SplitMode>("all");
     const [ranges, setRanges] = useState("");
@@ -251,6 +253,10 @@ export default function SplitPDFPage() {
             }
             setResults(splitFiles);
             setStatus("success");
+
+            if (file) {
+                addToHistory("Split PDF", file.name, `Split into ${splitFiles.length} files`);
+            }
         } catch (error) {
             console.error(error);
             setErrorMessage(error instanceof Error ? error.message : "Failed to split PDF");
