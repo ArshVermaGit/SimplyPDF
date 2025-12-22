@@ -8,6 +8,7 @@ import { Upload, File, X, Download, Loader2, CheckCircle2, RefreshCw, AlertCircl
 import { PDFDocument, degrees } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
+import { useHistory } from "@/context/HistoryContext";
 import {
     AnimatedBackground,
     FloatingDecorations,
@@ -36,6 +37,7 @@ interface FileInfo {
 }
 
 export default function MergePDFPage() {
+    const { addToHistory: recordAction } = useHistory();
     const [files, setFiles] = useState<FileInfo[]>([]);
     const [status, setStatus] = useState<"idle" | "loading" | "ready" | "processing" | "success" | "error">("idle");
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
@@ -54,15 +56,15 @@ export default function MergePDFPage() {
     const addMoreInputRef = useRef<HTMLInputElement>(null);
 
     // History for Undo/Redo
-    const [history, setHistory] = useState<FileInfo[][]>([]);
+    const [undoRedoHistory, setUndoRedoHistory] = useState<FileInfo[][]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
 
-    const addToHistory = (newFiles: FileInfo[]) => {
-        const newHistory = history.slice(0, historyIndex + 1);
+    const pushToUndoRedo = (newFiles: FileInfo[]) => {
+        const newHistory = undoRedoHistory.slice(0, historyIndex + 1);
         newHistory.push(newFiles);
         // Limit history size to 20
         if (newHistory.length > 20) newHistory.shift();
-        setHistory(newHistory);
+        setUndoRedoHistory(newHistory);
         setHistoryIndex(newHistory.length - 1);
         setFiles(newFiles);
     };
@@ -71,15 +73,15 @@ export default function MergePDFPage() {
         if (historyIndex > 0) {
             const newIndex = historyIndex - 1;
             setHistoryIndex(newIndex);
-            setFiles(history[newIndex]);
+            setFiles(undoRedoHistory[newIndex]);
         }
     };
 
     const redo = () => {
-        if (historyIndex < history.length - 1) {
+        if (historyIndex < undoRedoHistory.length - 1) {
             const newIndex = historyIndex + 1;
             setHistoryIndex(newIndex);
-            setFiles(history[newIndex]);
+            setFiles(undoRedoHistory[newIndex]);
         }
     };
 
@@ -91,7 +93,7 @@ export default function MergePDFPage() {
             if (criteria === 'size_desc') return b.size - a.size;
             return 0;
         });
-        addToHistory(sorted);
+        pushToUndoRedo(sorted);
     };
 
     const handleDrop = async (e: React.DragEvent) => {
@@ -177,7 +179,7 @@ export default function MergePDFPage() {
             }
 
             if (isFirstLoad) {
-                addToHistory(loadedFiles);
+                pushToUndoRedo(loadedFiles);
                 setFiles(loadedFiles);
             } else {
                 const combinedFiles = [...files, ...loadedFiles];
@@ -187,7 +189,7 @@ export default function MergePDFPage() {
                     // We could show a toast here, for now just log or set a transient message
                     console.warn("Duplicate files detected");
                 }
-                addToHistory(combinedFiles);
+                pushToUndoRedo(combinedFiles);
                 setFiles(combinedFiles);
             }
             setStatus("ready");
@@ -214,7 +216,7 @@ export default function MergePDFPage() {
             }
             return f;
         });
-        addToHistory(newFiles);
+        pushToUndoRedo(newFiles);
     };
 
     const removePage = (fileId: string, pageId: string) => {
@@ -224,7 +226,7 @@ export default function MergePDFPage() {
             }
             return f;
         }).filter(f => f.pages.length > 0);
-        addToHistory(newFiles);
+        pushToUndoRedo(newFiles);
     };
 
     const toggleFileExpand = (fileId: string) => {
@@ -233,7 +235,7 @@ export default function MergePDFPage() {
 
     const removeFile = (fileId: string) => {
         const newFiles = files.filter(f => f.id !== fileId);
-        addToHistory(newFiles);
+        pushToUndoRedo(newFiles);
     };
 
     const handleRangeSelection = (fileId: string, rangeStr: string) => {
@@ -267,7 +269,7 @@ export default function MergePDFPage() {
             }
             return f;
         });
-        addToHistory(newFiles);
+        pushToUndoRedo(newFiles);
     };
 
     const openPreview = (filePages: PageInfo[], startIndex: number) => {
@@ -321,8 +323,12 @@ export default function MergePDFPage() {
             }
 
             const pdfBytes = await mergedPdf.save();
-            setResultBlob(uint8ArrayToBlob(pdfBytes));
+            const blob = uint8ArrayToBlob(pdfBytes);
+            setResultBlob(blob);
             setStatus("success");
+
+            // Add to history
+            recordAction("Merged PDF", "merged_SimplyPDF.pdf", `${files.length} files merged`);
         } catch (error) {
             console.error(error);
             setErrorMessage("Failed to merge PDFs. Please try again.");
@@ -347,7 +353,7 @@ export default function MergePDFPage() {
         setErrorMessage("");
         setCustomFileName("merged.pdf");
         setMetadata({ title: "", author: "", subject: "" });
-        setHistory([]);
+        setUndoRedoHistory([]);
         setHistoryIndex(-1);
     };
 
