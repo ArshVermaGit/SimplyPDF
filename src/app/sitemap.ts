@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://simplypdf.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://simplypdf.vercel.app'
 
     // All tool pages
     const tools = [
@@ -34,43 +34,43 @@ export default function sitemap(): MetadataRoute.Sitemap {
         {
             url: baseUrl,
             lastModified: new Date(),
-            changeFrequency: 'daily',
+            changeFrequency: 'daily' as const,
             priority: 1,
         },
         {
             url: `${baseUrl}/about`,
             lastModified: new Date(),
-            changeFrequency: 'monthly',
+            changeFrequency: 'monthly' as const,
             priority: 0.5,
         },
         {
             url: `${baseUrl}/privacy`,
             lastModified: new Date(),
-            changeFrequency: 'monthly',
+            changeFrequency: 'monthly' as const,
             priority: 0.4,
         },
         {
             url: `${baseUrl}/terms`,
             lastModified: new Date(),
-            changeFrequency: 'monthly',
+            changeFrequency: 'monthly' as const,
             priority: 0.4,
         },
         {
             url: `${baseUrl}/contact`,
             lastModified: new Date(),
-            changeFrequency: 'monthly',
+            changeFrequency: 'monthly' as const,
             priority: 0.5,
         },
         {
             url: `${baseUrl}/faq`,
             lastModified: new Date(),
-            changeFrequency: 'weekly',
+            changeFrequency: 'weekly' as const,
             priority: 0.6,
         },
         {
             url: `${baseUrl}/history`,
             lastModified: new Date(),
-            changeFrequency: 'weekly',
+            changeFrequency: 'weekly' as const,
             priority: 0.3,
         },
         ...toolPages,
