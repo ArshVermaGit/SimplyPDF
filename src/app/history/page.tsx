@@ -162,7 +162,7 @@ export default function HistoryPage() {
                         <div className="absolute left-8 top-48 bottom-32 w-px bg-gradient-to-b from-gray-200 via-gray-300 to-transparent hidden md:block" />
 
                         <AnimatePresence>
-                            {history.map((item: HistoryItem, index: number) => (
+                            {history.map((item: HistoryItem) => (
                                 <motion.div
                                     key={item.id}
                                     variants={itemVariants}
