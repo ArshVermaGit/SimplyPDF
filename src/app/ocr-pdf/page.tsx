@@ -13,6 +13,7 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { EducationalContent } from "@/components/EducationalContent";
 import { useHistory } from "@/context/HistoryContext";
 
 export default function OCRPDFPage() {
@@ -24,6 +25,7 @@ export default function OCRPDFPage() {
     const [dragActive, setDragActive] = useState(false);
     const [progress, setProgress] = useState(0);
     const [copied, setCopied] = useState(false);
+    const [customFileName, setCustomFileName] = useState("extracted-text.txt");
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
@@ -31,6 +33,7 @@ export default function OCRPDFPage() {
         const droppedFile = e.dataTransfer.files[0];
         if (droppedFile?.type === "application/pdf") {
             setFile(droppedFile);
+            setCustomFileName(droppedFile.name.replace(".pdf", "-text.txt"));
         }
     };
 
@@ -38,6 +41,7 @@ export default function OCRPDFPage() {
         const selectedFile = e.target.files?.[0];
         if (selectedFile) {
             setFile(selectedFile);
+            setCustomFileName(selectedFile.name.replace(".pdf", "-text.txt"));
         }
     };
 
@@ -48,7 +52,6 @@ export default function OCRPDFPage() {
         setProgress(0);
 
         try {
-            console.log("Loading pdfjs-dist...");
             const pdfjsLib = await import("pdfjs-dist");
             const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
             pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
@@ -68,8 +71,6 @@ export default function OCRPDFPage() {
             let fullText = "";
 
             for (let i = 1; i <= numPages; i++) {
-                setProgress(Math.round((i / numPages) * 100));
-
                 const page = await pdfDoc.getPage(i);
 
                 // First try to get existing text
@@ -79,10 +80,9 @@ export default function OCRPDFPage() {
                     .join(" ");
 
                 if (pageText.trim().length > 50) {
-                    // Page has existing text, use it
                     fullText += `\n--- Page ${i} ---\n${pageText}\n`;
+                    setProgress(Math.round((i / numPages) * 100));
                 } else {
-                    // Page might be scanned, use OCR
                     const viewport = page.getViewport({ scale: 2 });
                     const canvas = document.createElement("canvas");
                     const context = canvas.getContext("2d")!;
@@ -132,7 +132,7 @@ export default function OCRPDFPage() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "extracted-text.txt";
+        link.download = customFileName || "extracted-text.txt";
         link.click();
         URL.revokeObjectURL(url);
     };
@@ -162,7 +162,7 @@ export default function OCRPDFPage() {
                         >
                             <ToolHeader
                                 title="OCR PDF"
-                                description="Extract text from scanned PDFs using optical character recognition."
+                                description="AI-powered text extraction from scanned PDFs and images."
                                 icon={ScanLine}
                             />
 
@@ -181,9 +181,9 @@ export default function OCRPDFPage() {
                                         className="hidden"
                                         onChange={handleFileChange}
                                     />
-                                    <Upload className="w-12 h-12 text-gray-400 mb-4" />
-                                    <p className="text-lg font-medium mb-2">Drop your PDF here</p>
-                                    <p className="text-gray-400 text-sm">or click to browse</p>
+                                    <Upload className="w-16 h-16 text-gray-300 mb-6" />
+                                    <p className="text-xl font-semibold mb-2">Drop your PDF here</p>
+                                    <p className="text-gray-400">or click to browse from your computer</p>
                                 </div>
 
                                 {file && (
@@ -192,46 +192,33 @@ export default function OCRPDFPage() {
                                         animate={{ opacity: 1, y: 0 }}
                                         className="mt-8 flex flex-col items-center"
                                     >
-                                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl w-full max-w-md">
-                                            <div className="p-3 bg-white rounded-xl shadow-sm">
-                                                <FileText className="w-6 h-6 text-black" />
+                                        <div className="flex items-center gap-4 p-5 bg-gray-50 border border-gray-100 rounded-[28px] w-full max-w-md">
+                                            <div className="p-3.5 bg-white rounded-2xl shadow-sm">
+                                                <FileText className="w-7 h-7 text-black" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-bold truncate">{file.name}</p>
-                                                <p className="text-sm text-gray-400 font-medium">{formatFileSize(file.size)}</p>
+                                                <p className="font-bold text-gray-900 truncate">{file.name}</p>
+                                                <p className="text-sm text-gray-400 font-bold uppercase tracking-wider">{formatFileSize(file.size)}</p>
                                             </div>
                                         </div>
 
                                         <button
                                             onClick={handleOCR}
-                                            className="mt-8 btn-primary text-xl py-5 px-16 flex items-center gap-3 shadow-2xl shadow-black/10 group hover:scale-[1.02] transition-all"
+                                            className="mt-8 btn-primary text-xl py-5 px-20 flex items-center gap-3 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] group hover:scale-[1.02] active:scale-[0.98] transition-all"
                                         >
-                                            <ScanLine className="w-6 h-6" />
+                                            <ScanLine className="w-6 h-6 group-hover:rotate-12 transition-transform" />
                                             Extract Text
                                         </button>
                                     </motion.div>
                                 )}
                             </ToolCard>
-
-                            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                                {[
-                                    { label: "100% Free", desc: "No hidden fees" },
-                                    { label: "Private", desc: "Files stay on device" },
-                                    { label: "Fast", desc: "Instant processing" },
-                                ].map((feature) => (
-                                    <div key={feature.label} className="p-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/20">
-                                        <div className="font-bold text-lg mb-1">{feature.label}</div>
-                                        <div className="text-gray-400 text-sm font-medium">{feature.desc}</div>
-                                    </div>
-                                ))}
-                            </div>
                         </motion.div>
                     )}
 
                     {status === "processing" && (
                         <ProcessingState
-                            title="Analyzing PDF content..."
-                            description="Running OCR algorithms on scanned pages..."
+                            message="Analyzing content..."
+                            description="Running AI recognition on your document pages..."
                             progress={progress}
                         />
                     )}
@@ -241,55 +228,79 @@ export default function OCRPDFPage() {
                             key="success"
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="max-w-4xl mx-auto"
+                            className="max-w-5xl mx-auto py-12"
                         >
-                            <div className="text-center mb-10">
-                                <div className="w-20 h-20 bg-black text-white rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-2xl">
-                                    <CheckCircle2 className="w-10 h-10" />
-                                </div>
-                                <h2 className="text-4xl font-extrabold mb-2 tracking-tight">Text Extracted!</h2>
-                                <p className="text-gray-500 text-lg">Analysis complete. We found the following text in your document.</p>
+                            <div className="text-center mb-12">
+                                <motion.div 
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="w-24 h-24 bg-black text-white rounded-[40px] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-black/20"
+                                >
+                                    <CheckCircle2 className="w-12 h-12" />
+                                </motion.div>
+                                <h2 className="text-5xl font-black text-gray-900 mb-2 tracking-tight">Text Extracted!</h2>
+                                <p className="text-gray-500 font-medium text-lg">We successfully analyzed all pages and extracted the text below.</p>
                             </div>
 
-                            <ToolCard className="p-8">
-                                <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
-                                    <h3 className="font-bold text-xl flex items-center gap-2">
-                                        <FileText className="w-5 h-5" />
-                                        Extracted Content
-                                    </h3>
-                                    <div className="flex gap-3 w-full md:w-auto">
-                                        <button
-                                            onClick={handleCopy}
-                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-bold text-sm"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                            {copied ? "Copied!" : "Copy Text"}
-                                        </button>
-                                        <button
-                                            onClick={handleDownloadText}
-                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors font-bold text-sm shadow-lg shadow-black/10"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                            Download .txt
-                                        </button>
-                                    </div>
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                                <div className="lg:col-span-2">
+                                    <ToolCard className="p-10 shadow-2xl overflow-hidden border-none bg-white/40 backdrop-blur-md">
+                                        <div className="flex items-center justify-between mb-8">
+                                            <h3 className="font-black text-xl uppercase tracking-wider flex items-center gap-3">
+                                                <FileText className="w-6 h-6" />
+                                                Text Preview
+                                            </h3>
+                                            <button
+                                                onClick={handleCopy}
+                                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all font-bold text-sm ${
+                                                    copied ? "bg-green-500 text-white" : "bg-white border border-gray-100 hover:border-black shadow-sm"
+                                                }`}
+                                            >
+                                                {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                                {copied ? "Copied!" : "Copy Text"}
+                                            </button>
+                                        </div>
+
+                                        <div className="bg-white/60 rounded-[32px] p-8 max-h-[600px] overflow-y-auto border border-white shadow-inner">
+                                            <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800 leading-relaxed">
+                                                {extractedText || "No text could be extracted from this document."}
+                                            </pre>
+                                        </div>
+                                    </ToolCard>
                                 </div>
 
-                                <div className="bg-gray-50 rounded-2xl p-6 max-h-[500px] overflow-y-auto border border-gray-100">
-                                    <pre className="whitespace-pre-wrap text-sm font-mono text-gray-700 leading-relaxed">
-                                        {extractedText}
-                                    </pre>
-                                </div>
-                            </ToolCard>
+                                <div className="space-y-6">
+                                    <ToolCard className="p-8 shadow-xl">
+                                        <h4 className="font-bold text-sm uppercase tracking-widest text-gray-400 mb-6">Download Settings</h4>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-gray-500 uppercase px-1">Filename</label>
+                                                <input 
+                                                    type="text"
+                                                    value={customFileName}
+                                                    onChange={(e) => setCustomFileName(e.target.value)}
+                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black transition-all font-medium text-sm"
+                                                    placeholder="filename.txt"
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={handleDownloadText}
+                                                className="w-full btn-primary py-4 rounded-2xl flex items-center justify-center gap-2 font-bold group"
+                                            >
+                                                <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+                                                Download .txt
+                                            </button>
+                                        </div>
+                                    </ToolCard>
 
-                            <div className="flex justify-center mt-12">
-                                <button
-                                    onClick={reset}
-                                    className="btn-outline py-4 px-10 flex items-center gap-3 text-lg font-bold"
-                                >
-                                    <RefreshCw className="w-6 h-6" />
-                                    OCR Another Document
-                                </button>
+                                    <button
+                                        onClick={reset}
+                                        className="w-full py-4 border-2 border-dashed border-gray-200 rounded-3xl text-gray-400 font-bold hover:border-black hover:text-black transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <RefreshCw className="w-5 h-5" />
+                                        OCR Another
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     )}
@@ -301,19 +312,56 @@ export default function OCRPDFPage() {
                             animate={{ opacity: 1, y: 0 }}
                             className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
                         >
-                            <div className="w-24 h-24 bg-red-50 text-red-500 rounded-[32px] flex items-center justify-center mb-8">
+                            <div className="w-24 h-24 bg-red-100 text-red-600 rounded-[40px] flex items-center justify-center mb-8 shadow-xl shadow-red-100">
                                 <AlertCircle className="w-12 h-12" />
                             </div>
-                            <h2 className="text-4xl font-extrabold mb-4 tracking-tight">Processing Error</h2>
-                            <p className="text-gray-500 text-lg mb-12">{errorMessage}</p>
+                            <h2 className="text-4xl font-black mb-4 tracking-tight">OCR Failed</h2>
+                            <p className="text-gray-500 text-lg mb-12 font-medium leading-relaxed">{errorMessage}</p>
 
-                            <button onClick={reset} className="w-full btn-primary py-5 px-12 flex items-center justify-center gap-3 text-lg font-bold">
-                                <RefreshCw className="w-6 h-6" />
+                            <button onClick={reset} className="btn-primary py-5 px-16 flex items-center justify-center gap-3 text-lg font-bold group rounded-2xl">
+                                <RefreshCw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
                                 Try Again
                             </button>
                         </motion.div>
                     )}
                 </AnimatePresence>
+            </div>
+
+            <div className="container mx-auto px-4 mt-24">
+                <EducationalContent
+                    howItWorks={{
+                        title: "How OCR Works",
+                        steps: [
+                            "Upload your scanned PDF or image document.",
+                            "Our AI engine analyzes each page for text patterns and structure.",
+                            "Optical Character Recognition converts pixels into editable text.",
+                            "Preview the results and download your editable .txt file."
+                        ]
+                    }}
+                    benefits={{
+                        title: "Hyper-Premium Extraction",
+                        items: [
+                            { title: "Universal Detection", desc: "Recognizes text from scans, photos, and non-selectable PDFs effortlessly." },
+                            { title: "Browser Privacy", desc: "All AI recognition happens in your browser. Your sensitive data never leaves your device." },
+                            { title: "High Accuracy", desc: "Powered by Tesseract.js, the most accurate open-source OCR engine available today." },
+                            { title: "One-Click Export", desc: "Instantly copy text or download a clean text file with one click." }
+                        ]
+                    }}
+                    faqs={[
+                        {
+                            question: "What languages are supported?",
+                            answer: "Our current implementation is optimized for English, but it can recognize most Latin-based characters with high accuracy."
+                        },
+                        {
+                            question: "Does it handle handwriting?",
+                            answer: "OCR works best with printed text. While it can detect some clear handwriting, specialized handwriting AI is usually required for messy scripts."
+                        },
+                        {
+                            question: "Is there a page limit?",
+                            answer: "There's no hard limit, but large documents (50+ pages) may take several minutes as all processing is done locally on your CPU."
+                        }
+                    ]}
+                />
             </div>
         </div>
     );
