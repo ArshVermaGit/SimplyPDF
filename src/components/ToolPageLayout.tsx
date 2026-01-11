@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Loader2, CheckCircle2, Download, RefreshCw, AlertCircle, ArrowRight, Sparkles } from "lucide-react";
+import { CheckCircle2, Download, RefreshCw, AlertCircle, ArrowRight } from "lucide-react";
 import { FileUploader } from "./FileUploader";
 import { downloadFile } from "@/lib/pdf-utils";
 import {
@@ -230,7 +230,7 @@ export function ToolPageLayout({
                                     { icon: "🔒", label: "100% Private", desc: "Files never leave your device" },
                                     { icon: "⚡", label: "Lightning Fast", desc: "Instant local processing" },
                                     { icon: "✨", label: "Completely Free", desc: "No hidden fees or limits" },
-                                ].map((feature, i) => (
+                                ].map((feature) => (
                                     <motion.div
                                         key={feature.label}
                                         className="group relative p-6 rounded-2xl bg-gradient-to-b from-gray-50 to-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-500"
