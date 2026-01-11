@@ -4,10 +4,11 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { Upload, File, X, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, GripVertical, Trash2, Layers, Eye, Check } from "lucide-react";
+import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, GripVertical, Trash2, Layers, Eye, Check } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
+import Image from "next/image";
 import {
     AnimatedBackground,
     FloatingDecorations,
@@ -80,7 +81,7 @@ export default function OrganizePDFPage() {
                 const context = canvas.getContext("2d")!;
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                await page.render({ canvasContext: context, viewport } as any).promise;
+                await page.render({ canvasContext: context, viewport }).promise;
 
                 pageInfos.push({
                     id: `page-${i - 1}`,
@@ -89,15 +90,16 @@ export default function OrganizePDFPage() {
                     image: canvas.toDataURL("image/jpeg", 0.7),
                 });
 
-                (page as any).cleanup?.();
+                (page as { cleanup?: () => void }).cleanup?.();
             }
 
             setPages(pageInfos);
             setStatus("ready");
             await pdfDoc.destroy();
-        } catch (error: any) {
+        } catch (error) {
             console.error("PDF loading error:", error);
-            setErrorMessage(`Failed to load PDF: ${error.message || "Unknown error"}`);
+            const message = error instanceof Error ? error.message : "Unknown error";
+            setErrorMessage(`Failed to load PDF: ${message}`);
             setStatus("error");
         }
     };
@@ -296,13 +298,15 @@ export default function OrganizePDFPage() {
 
                                                 {/* Image */}
                                                 <div
-                                                    className="aspect-[3/4] bg-white cursor-pointer"
+                                                    className="aspect-3/4 bg-white cursor-pointer"
                                                     onClick={() => openPreview(index)}
                                                 >
-                                                    <img
+                                                    <Image
                                                         src={page.image}
                                                         alt={`Page ${page.pageNumber}`}
+                                                        fill
                                                         className="w-full h-full object-contain"
+                                                        unoptimized
                                                     />
                                                 </div>
 
@@ -410,7 +414,8 @@ export default function OrganizePDFPage() {
                 images={pages.map(p => p.image)}
                 currentPage={previewPage}
                 onPageChange={setPreviewPage}
-                title={file?.name || "PDF Preview"}
+                onDownload={handleOrganize}
+                title="Organize PDF Preview"
             />
         </div>
     );
