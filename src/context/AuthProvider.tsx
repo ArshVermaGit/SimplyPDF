@@ -28,7 +28,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedUser = localStorage.getItem("simplypdf_user");
         if (storedUser) {
             try {
-                setUser(JSON.parse(storedUser));
+                const parsed = JSON.parse(storedUser);
+                setTimeout(() => {
+                    setUser(parsed);
+                }, 0);
             } catch (e) {
                 console.error("Failed to parse stored user", e);
                 localStorage.removeItem("simplypdf_user");
@@ -39,7 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = (credentialResponse: CredentialResponse) => {
         if (credentialResponse.credential) {
             try {
-                const decoded: any = jwtDecode(credentialResponse.credential);
+                const decoded = jwtDecode<{
+                    email: string;
+                    picture: string;
+                    name: string;
+                    sub: string;
+                }>(credentialResponse.credential);
                 const newUser: User = {
                     email: decoded.email,
                     description: "Google User",
