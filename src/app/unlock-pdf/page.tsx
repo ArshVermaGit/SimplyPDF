@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, X, Loader2, CheckCircle2, Download, AlertCircle, RefreshCw, Lock, Shield, Key, Info, Unlock } from "lucide-react";
+import { Upload, File, CheckCircle2, Download, AlertCircle, RefreshCw, Key, Unlock } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import { formatFileSize, uint8ArrayToBlob } from "@/lib/pdf-utils";
 import {
