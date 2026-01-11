@@ -1,14 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
-    Merge,
-    Split,
-    Minimize2,
-    RotateCw,
-    Image,
-    FileImage,
     Github,
     Twitter,
     Linkedin,
