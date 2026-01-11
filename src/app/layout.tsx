@@ -11,6 +11,20 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+import { Great_Vibes, Alex_Brush } from "next/font/google";
+
+const greatVibes = Great_Vibes({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-cursive",
+});
+
+const alexBrush = Alex_Brush({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-alex",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://simplypdf.vercel.app'),
   title: "SimplyPDF | The Easiest PDF Tool",
@@ -28,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body className={`${inter.variable} font-sans antialiased min-h-screen flex flex-col`}>
+      <body className={`${inter.variable} ${greatVibes.variable} ${alexBrush.variable} font-sans antialiased min-h-screen flex flex-col`}>
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4266443141083729"
