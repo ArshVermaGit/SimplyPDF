@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, FileDown, FileText, ArrowRight, Table } from "lucide-react";
+import { Upload, Download, CheckCircle2, RefreshCw, AlertCircle, FileDown, FileText, ArrowRight, Table } from "lucide-react";
 import { formatFileSize } from "@/lib/pdf-utils";
 import {
     AnimatedBackground,
@@ -74,7 +74,7 @@ export default function PDFToExcelPage() {
                 const textContent = await page.getTextContent();
 
                 // Extract text items with positions
-                const items = textContent.items as any[];
+                const items = textContent.items as unknown as { transform: number[]; str: string }[];
 
                 // Group by Y position to form rows
                 const rows: { [y: number]: { x: number; text: string }[] } = {};
@@ -118,7 +118,7 @@ export default function PDFToExcelPage() {
                         }
                     }
                 }
-                (page as any).cleanup?.();
+                (page as { cleanup?: () => void }).cleanup?.();
             }
 
             setExtractedData(allRows.slice(0, 20)); // Preview first 20 rows
@@ -140,9 +140,10 @@ export default function PDFToExcelPage() {
             }
 
             await pdfDoc.destroy();
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
-            setErrorMessage(error instanceof Error ? error.message : "Failed to convert PDF to Excel");
+            const message = error instanceof Error ? error.message : "Unknown error";
+            setErrorMessage(message);
             setStatus("error");
         }
     };
