@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { motion, AnimatePresence, Reorder } from "framer-motion";
+import { motion, Reorder } from "framer-motion";
 import { Upload, File, X, GripVertical, Plus } from "lucide-react";
 
 interface FileUploaderProps {
