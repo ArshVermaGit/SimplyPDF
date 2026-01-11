@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, Type, Pencil, ChevronLeft, ChevronRight, Trash2, Square, Circle, Image as ImageIcon, MousePointer2, Settings, Plus, Minus, Move } from "lucide-react";
+import { Upload, Download, CheckCircle2, RefreshCw, AlertCircle, Type, Pencil, ChevronLeft, ChevronRight, Trash2, Square, Circle, Image as ImageIcon, MousePointer2, Settings, Plus, Minus, Move } from "lucide-react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 import {
@@ -14,6 +14,7 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { EducationalContent } from "@/components/EducationalContent";
 import { useHistory } from "@/context/HistoryContext";
 import Image from "next/image";
 
@@ -127,10 +128,10 @@ export default function EditPDFPage() {
                     id: `image-${Date.now()}`,
                     type: "image",
                     page: currentPage,
-                    x: 20,
-                    y: 20,
-                    width: 30,
-                    height: 30,
+                    x: 25,
+                    y: 25,
+                    width: 20,
+                    height: 20,
                     content,
                     color: "transparent",
                     opacity: 1
@@ -141,6 +142,8 @@ export default function EditPDFPage() {
             reader.readAsDataURL(file);
         }
     };
+
+    const [customFileName, setCustomFileName] = useState("edited.pdf");
 
     const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if ((selectedTool as string) !== "text") return;
@@ -386,7 +389,7 @@ export default function EditPDFPage() {
         const url = URL.createObjectURL(resultBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = (file?.name.replace(".pdf", "") || "edited") + "_SimplyPDF.pdf";
+        link.download = customFileName;
         link.click();
         URL.revokeObjectURL(url);
     };
@@ -455,6 +458,7 @@ export default function EditPDFPage() {
                         key="editing"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         className="flex-1 flex overflow-hidden relative z-10"
                     >
                         {/* LEFT: Floating Toolbar */}
@@ -551,14 +555,16 @@ export default function EditPDFPage() {
                                 onMouseUp={handleMouseUp}
                                 onClick={handleCanvasClick}
                             >
-                                <Image
-                                    src={pageImages[currentPage]}
-                                    alt={`Page ${currentPage + 1}`}
-                                    width={pageDimensions[currentPage]?.width || 0}
-                                    height={pageDimensions[currentPage]?.height || 0}
-                                    className="absolute inset-0 w-full h-full pointer-events-none select-none"
-                                    unoptimized
-                                />
+                                {pageImages[currentPage] && (
+                                    <Image
+                                        src={pageImages[currentPage]}
+                                        alt={`Page ${currentPage + 1}`}
+                                        width={pageDimensions[currentPage]?.width || 0}
+                                        height={pageDimensions[currentPage]?.height || 0}
+                                        className="absolute inset-0 w-full h-full pointer-events-none select-none"
+                                        unoptimized
+                                    />
+                                )}
 
                                 {/* Render All Page Annotations */}
                                 {currentPageAnnotations.map((anno) => (
@@ -672,11 +678,28 @@ export default function EditPDFPage() {
 
                         {/* RIGHT: Property & Layer Sidebar */}
                         <div className="w-80 flex flex-col border-l border-gray-200 bg-white overflow-y-auto">
-                            {/* Properties Section */}
                             <div className="p-6 border-b border-gray-100">
                                 <div className="flex items-center gap-2 mb-6">
                                     <Settings className="w-4 h-4" />
-                                    <h3 className="font-bold uppercase tracking-wider text-xs">Properties</h3>
+                                    <h3 className="font-bold uppercase tracking-wider text-xs">Page Properties</h3>
+                                </div>
+
+                                <div className="mb-8 space-y-3">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Output Filename</label>
+                                    <input 
+                                        type="text"
+                                        value={customFileName}
+                                        onChange={(e) => setCustomFileName(e.target.value)}
+                                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all text-xs font-medium"
+                                        placeholder="filename.pdf"
+                                    />
+                                </div>
+
+                                <div className="h-px bg-gray-50 mb-6" />
+
+                                <div className="flex items-center gap-2 mb-6">
+                                    <Settings className="w-4 h-4" />
+                                    <h3 className="font-bold uppercase tracking-wider text-xs">Tool Settings</h3>
                                 </div>
 
                                 <div className="flex flex-col gap-6">
@@ -811,24 +834,41 @@ export default function EditPDFPage() {
                         key="success"
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
+                        exit={{ opacity: 0 }}
+                        className="max-w-4xl mx-auto py-12"
                     >
-                        <div className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mb-8">
-                            <CheckCircle2 className="w-10 h-10" />
+                        <div className="text-center mb-12">
+                            <motion.div 
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="w-20 h-20 bg-black text-white rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-black/20"
+                            >
+                                <CheckCircle2 className="w-10 h-10" />
+                            </motion.div>
+                            <h2 className="text-4xl font-black text-gray-900 mb-2">PDF Successfully Edited!</h2>
+                            <p className="text-gray-500 font-medium text-lg">Your annotations have been permanently embedded into the document.</p>
                         </div>
-                        <h2 className="text-3xl font-bold mb-2">PDF Edited Successfully!</h2>
-                        <p className="text-gray-500 mb-10">Your annotations have been applied to the document.</p>
 
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <button onClick={handleDownload} className="btn-primary py-4 px-10 flex items-center gap-2">
-                                <Download className="w-5 h-5" />
-                                Download PDF
-                            </button>
-                            <button onClick={reset} className="btn-outline py-4 px-10 flex items-center gap-2">
-                                <RefreshCw className="w-5 h-5" />
-                                Edit Another
-                            </button>
-                        </div>
+                        <ToolCard className="p-10 max-w-2xl mx-auto shadow-2xl">
+                            <div className="flex flex-col items-center gap-8">
+                                <div className="w-full space-y-4">
+                                    <button 
+                                        onClick={handleDownload}
+                                        className="w-full btn-primary py-5 rounded-2xl flex items-center justify-center gap-3 text-lg group hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                    >
+                                        <Download className="w-6 h-6 group-hover:translate-y-0.5 transition-transform" />
+                                        <span className="font-bold">Download Edited PDF</span>
+                                    </button>
+                                    <button 
+                                        onClick={reset}
+                                        className="w-full btn-outline py-5 rounded-2xl flex items-center justify-center gap-3 text-lg transition-all"
+                                    >
+                                        <RefreshCw className="w-5 h-5" />
+                                        Edit Another
+                                    </button>
+                                </div>
+                            </div>
+                        </ToolCard>
                     </motion.div>
                 )}
 
@@ -837,6 +877,7 @@ export default function EditPDFPage() {
                         key="error"
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
                         className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
                     >
                         <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-8">
@@ -852,6 +893,43 @@ export default function EditPDFPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <div className="container mx-auto px-4 pb-16">
+                <EducationalContent
+                    howItWorks={{
+                        title: "How to Edit PDF",
+                        steps: [
+                            "Upload your PDF to our secure browser-side editing canvas.",
+                            "Use the toolbar to add text, draw freely, or insert shapes and images.",
+                            "Select and customize each annotation's color, size, and opacity.",
+                            "Click 'Save PDF' to permanently embed your changes and download the result."
+                        ]
+                    }}
+                    benefits={{
+                        title: "Professional PDF Annotation",
+                        items: [
+                            { title: "No Subscription", desc: "Access the full suite of PDF editing tools for free, with no account required." },
+                            { title: "100% Private", desc: "Your file never leaves your computer. All editing happens locally in your browser memory." },
+                            { title: "Versatile Tools", desc: "Add text, signatures, highlights, and shapes with intuitive, professional-grade controls." },
+                            { title: "High Fidelity", desc: "Your edited PDF retains its original quality and remains compatible with all standard readers." }
+                        ]
+                    }}
+                    faqs={[
+                        {
+                            question: "Can I edit existing text in the PDF?",
+                            answer: "Currently, our tool allows you to add new text, drawings, and shapes on top of the original document. We don't support deleting or modifying the original text content yet."
+                        },
+                        {
+                            question: "Are my edits permanent?",
+                            answer: "Yes, when you download the saved PDF, all your annotations are 'flattened' and embedded directly into the document structure."
+                        },
+                        {
+                            question: "Is there a limit on file size?",
+                            answer: "We support files up to 50MB. Larger files may run slower depending on your device's memory since all processing is local."
+                        }
+                    ]}
+                />
+            </div>
         </div>
     );
 }
