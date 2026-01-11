@@ -367,7 +367,6 @@ export async function protectPDF(
 ): Promise<Uint8Array> {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
-
     return pdfDoc.save({
         userPassword,
         ownerPassword,
@@ -377,12 +376,14 @@ export async function protectPDF(
             copying: permissions.copying ?? true,
             annotating: permissions.annotating ?? true,
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 }
 
 /**
  * Extract images from PDF
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function extractImagesFromPDF(file: File): Promise<{ name: string; data: Uint8Array }[]> {
     // Note: pdf-lib doesn't easily support raw image extraction.
     // For a production app, we would use a more specialized library or custom parser.
