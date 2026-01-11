@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, FileUp, FileText, ArrowRight } from "lucide-react";
+import { Upload, Download, CheckCircle2, RefreshCw, AlertCircle, FileUp, FileText, ArrowRight } from "lucide-react";
 import { formatFileSize, uint8ArrayToBlob } from "@/lib/pdf-utils";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import {
