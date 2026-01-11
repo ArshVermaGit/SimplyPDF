@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Download, CheckCircle2, RefreshCw, AlertCircle, Type, Pencil, ChevronLeft, ChevronRight, Trash2, Square, Circle, Image as ImageIcon, MousePointer2, Settings, Plus, Minus, Move } from "lucide-react";
+import { Upload, Download, CheckCircle2, RefreshCw, AlertCircle, Type, Pencil, ChevronLeft, ChevronRight, Trash2, Square, Circle, Image as ImageIcon, MousePointer2, Settings, Plus, Minus, Move, RotateCcw as Rotate } from "lucide-react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 import {
@@ -19,6 +19,7 @@ import { useHistory } from "@/context/HistoryContext";
 import Image from "next/image";
 
 type Tool = "text" | "draw" | "rectangle" | "circle" | "image" | "select";
+const fonts = ["Inter, sans-serif", "serif", "monospace", "'Great Vibes', cursive", "'Alex Brush', cursive"];
 
 interface Annotation {
     id: string;
@@ -33,7 +34,10 @@ interface Annotation {
     opacity?: number;
     strokeWidth?: number;
     fontSize?: number;
+    rotation?: number;
+    fontFamily?: string;
     path?: { x: number; y: number }[];
+    isBatch?: boolean;
 }
 
 export default function EditPDFPage() {
@@ -50,21 +54,26 @@ export default function EditPDFPage() {
     const [selectedTool, setSelectedTool] = useState<Tool>("text");
     const [annotations, setAnnotations] = useState<Annotation[]>([]);
     const [currentColor, setCurrentColor] = useState("#000000");
-    const [textInput, setTextInput] = useState("");
-    const [isAddingText, setIsAddingText] = useState(false);
-    const [textPosition, setTextPosition] = useState({ x: 0, y: 0 });
+    const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
-    const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+    const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
     const [zoom, setZoom] = useState(1);
+    const [currentFontFamily, setCurrentFontFamily] = useState("Inter, sans-serif");
     const [currentStrokeWidth, setCurrentStrokeWidth] = useState(2);
     const [currentFontSize, setCurrentFontSize] = useState(14);
     const [currentOpacity, setCurrentOpacity] = useState(1);
-    const canvasRef = useRef<HTMLDivElement>(null);
+    const workspaceRef = useRef<HTMLDivElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const startX = useRef(0);
     const startY = useRef(0);
     const [isCreating, setIsCreating] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const [isRotating, setIsRotating] = useState(false);
+    const [showGrid, setShowGrid] = useState(false);
+    const dragOffset = useRef({ x: 0, y: 0 });
+    const resizeHandle = useRef<string | null>(null);
 
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
@@ -152,9 +161,24 @@ export default function EditPDFPage() {
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-        setTextPosition({ x, y });
-        setIsAddingText(true);
-        setTextInput("");
+        const newId = `text-${Date.now()}`;
+        const annotation: Annotation = {
+            id: newId,
+            type: "text",
+            page: currentPage,
+            x,
+            y,
+            content: "New Text",
+            color: currentColor,
+            fontSize: currentFontSize,
+            fontFamily: currentFontFamily,
+            opacity: currentOpacity,
+            rotation: 0
+        };
+
+        setAnnotations(prev => [...prev, annotation]);
+        setSelectedAnnotationId(newId);
+        setEditingAnnotationId(newId);
     };
 
     const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -183,23 +207,19 @@ export default function EditPDFPage() {
                 color: currentColor,
                 opacity: currentOpacity,
                 strokeWidth: currentStrokeWidth,
+                rotation: 0
             };
             setAnnotations(prev => [...prev, newAnnotation]);
             setSelectedAnnotationId(newId);
         } else if (selectedTool === "select") {
-            const clickedAnnotation = [...annotations]
-                .reverse()
-                .find(a =>
-                    a.page === currentPage &&
-                    x >= (a.x || 0) && x <= (a.x || 0) + (a.width || 5) &&
-                    y >= (a.y || 0) && y <= (a.y || 0) + (a.height || 5)
-                );
-            setSelectedAnnotationId(clickedAnnotation?.id || null);
+            // Clicking on empty canvas deselects
+            setSelectedAnnotationId(null);
         }
     };
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        const rect = e.currentTarget.getBoundingClientRect();
+        if (!workspaceRef.current) return;
+        const rect = workspaceRef.current.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
 
@@ -218,6 +238,42 @@ export default function EditPDFPage() {
                 }
                 return a;
             }));
+        } else if (isDragging && selectedAnnotationId) {
+            setAnnotations(prev => prev.map(a => {
+                if (a.id === selectedAnnotationId) {
+                    let nx = x - dragOffset.current.x;
+                    let ny = y - dragOffset.current.y;
+                    
+                    if (showGrid) {
+                        nx = Math.round(nx / 2) * 2;
+                        ny = Math.round(ny / 2) * 2;
+                    }
+
+                    return { ...a, x: nx, y: ny };
+                }
+                return a;
+            }));
+        } else if (isResizing && selectedAnnotationId) {
+            setAnnotations(prev => prev.map(a => {
+                if (a.id === selectedAnnotationId) {
+                    const centerX = (a.x || 0) + (a.width || 0) / 2;
+                    const centerY = (a.y || 0) + (a.height || 0) / 2;
+                    const newWidth = Math.max(2, Math.abs(x - centerX) * 2);
+                    const newHeight = Math.max(2, Math.abs(y - centerY) * 2);
+                    return { ...a, width: newWidth, height: newHeight };
+                }
+                return a;
+            }));
+        } else if (isRotating && selectedAnnotationId) {
+            setAnnotations(prev => prev.map(a => {
+                if (a.id === selectedAnnotationId) {
+                    const centerX = (a.x || 0) + (a.width || 0) / 2;
+                    const centerY = (a.y || 0) + (a.height || 0) / 2;
+                    const angle = Math.atan2(y - centerY, x - centerX) * (180 / Math.PI);
+                    return { ...a, rotation: angle + 90 };
+                }
+                return a;
+            }));
         }
     };
 
@@ -227,47 +283,31 @@ export default function EditPDFPage() {
                 id: `draw-${Date.now()}`,
                 type: "draw",
                 page: currentPage,
-                x: 0,
-                y: 0,
+                x: Math.min(...currentPath.map(p => p.x)),
+                y: Math.min(...currentPath.map(p => p.y)),
+                width: Math.max(...currentPath.map(p => p.x)) - Math.min(...currentPath.map(p => p.x)),
+                height: Math.max(...currentPath.map(p => p.y)) - Math.min(...currentPath.map(p => p.y)),
                 color: currentColor,
                 path: currentPath,
                 strokeWidth: currentStrokeWidth,
                 opacity: currentOpacity,
+                rotation: 0
             };
             setAnnotations(prev => [...prev, annotation]);
         }
         setIsDrawing(false);
         setCurrentPath([]);
         setIsCreating(false);
-    };
-
-    const addTextAnnotation = () => {
-        if (!textInput.trim()) {
-            setIsAddingText(false);
-            return;
-        }
-
-        const annotation: Annotation = {
-            id: `text-${Date.now()}`,
-            type: "text",
-            page: currentPage,
-            x: textPosition.x,
-            y: textPosition.y,
-            content: textInput,
-            color: currentColor,
-            fontSize: currentFontSize,
-            opacity: currentOpacity,
-        };
-
-        setAnnotations(prev => [...prev, annotation]);
-        setSelectedAnnotationId(annotation.id);
-        setIsAddingText(false);
-        setTextInput("");
+        setIsDragging(false);
+        setIsResizing(false);
+        setIsRotating(false);
+        resizeHandle.current = null;
     };
 
     const deleteAnnotation = (id: string) => {
         setAnnotations(prev => prev.filter(a => a.id !== id));
         if (selectedAnnotationId === id) setSelectedAnnotationId(null);
+        if (editingAnnotationId === id) setEditingAnnotationId(null);
     };
 
     const updateAnnotationProperty = <K extends keyof Annotation>(id: string, property: K, value: Annotation[K]) => {
@@ -283,11 +323,14 @@ export default function EditPDFPage() {
         try {
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await PDFDocument.load(arrayBuffer);
-            const font = await pdf.embedFont(StandardFonts.Helvetica);
+            const fontHelvetica = await pdf.embedFont(StandardFonts.Helvetica);
+            const fontTimes = await pdf.embedFont(StandardFonts.TimesRoman);
+            const fontCourier = await pdf.embedFont(StandardFonts.Courier);
 
             for (const annotation of annotations) {
-                const page = pdf.getPage(annotation.page);
-                const { width, height } = page.getSize();
+                const pagesToApply = annotation.isBatch 
+                    ? Array.from({ length: pdf.getPageCount() }, (_, i) => i) 
+                    : [annotation.page];
 
                 const hexColor = (annotation.color || "#000000").replace("#", "");
                 let r = 0, g = 0, b = 0;
@@ -298,74 +341,89 @@ export default function EditPDFPage() {
                 }
                 const color = rgb(r, g, b);
                 const opacity = annotation.opacity ?? 1;
+                const rotationAngle = -(annotation.rotation || 0);
 
-                if (annotation.type === "text" && annotation.content) {
-                    page.drawText(annotation.content, {
-                        x: (annotation.x / 100) * width,
-                        y: height - (annotation.y / 100) * height,
-                        size: annotation.fontSize || 14,
-                        font,
-                        color,
-                        opacity,
-                    });
-                } else if (annotation.type === "draw" && annotation.path) {
-                    for (let i = 0; i < annotation.path.length - 1; i++) {
-                        const start = annotation.path[i];
-                        const end = annotation.path[i + 1];
+                for (const pageIndex of pagesToApply) {
+                    const page = pdf.getPage(pageIndex);
+                    const { width, height } = page.getSize();
 
-                        page.drawLine({
-                            start: {
-                                x: (start.x / 100) * width,
-                                y: height - (start.y / 100) * height,
-                            },
-                            end: {
-                                x: (end.x / 100) * width,
-                                y: height - (end.y / 100) * height,
-                            },
-                            thickness: annotation.strokeWidth || 2,
+                    if (annotation.type === "text" && annotation.content) {
+                        let currentFont = fontHelvetica;
+                        if (annotation.fontFamily?.includes("serif")) currentFont = fontTimes;
+                        if (annotation.fontFamily?.includes("monospace")) currentFont = fontCourier;
+
+                        page.drawText(annotation.content, {
+                            x: (annotation.x / 100) * width,
+                            y: height - (annotation.y / 100) * height,
+                            size: annotation.fontSize || 14,
+                            font: currentFont,
                             color,
                             opacity,
+                            rotate: { type: 'degrees', angle: rotationAngle } as never,
                         });
-                    }
-                } else if (annotation.type === "rectangle") {
-                    page.drawRectangle({
-                        x: (annotation.x / 100) * width,
-                        y: height - (annotation.y / 100) * height - ((annotation.height || 0) / 100) * height,
-                        width: ((annotation.width || 0) / 100) * width,
-                        height: ((annotation.height || 0) / 100) * height,
-                        borderColor: color,
-                        borderWidth: annotation.strokeWidth || 2,
-                        opacity,
-                    });
-                } else if (annotation.type === "circle") {
-                    page.drawEllipse({
-                        x: (annotation.x / 100) * width + ((annotation.width || 0) / 200) * width,
-                        y: height - (annotation.y / 100) * height - ((annotation.height || 0) / 200) * height,
-                        xScale: ((annotation.width || 0) / 200) * width,
-                        yScale: ((annotation.height || 0) / 200) * height,
-                        borderColor: color,
-                        borderWidth: annotation.strokeWidth || 2,
-                        opacity,
-                    });
-                } else if (annotation.type === "image" && annotation.content) {
-                    try {
-                        const base64Data = annotation.content.split(',')[1];
-                        const imageBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-                        let embeddedImage;
-                        if (annotation.content.includes("image/png")) {
-                            embeddedImage = await pdf.embedPng(imageBytes);
-                        } else {
-                            embeddedImage = await pdf.embedJpg(imageBytes);
+                    } else if (annotation.type === "draw" && annotation.path) {
+                        for (let i = 0; i < annotation.path.length - 1; i++) {
+                            const start = annotation.path[i];
+                            const end = annotation.path[i + 1];
+
+                            page.drawLine({
+                                start: {
+                                    x: (start.x / 100) * width,
+                                    y: height - (start.y / 100) * height,
+                                },
+                                end: {
+                                    x: (end.x / 100) * width,
+                                    y: height - (end.y / 100) * height,
+                                },
+                                thickness: annotation.strokeWidth || 2,
+                                color,
+                                opacity,
+                                // Lines don't rotate easily around a center in drawLine, usually paths are pre-rotated in UI
+                            });
                         }
-                        page.drawImage(embeddedImage, {
+                    } else if (annotation.type === "rectangle") {
+                        page.drawRectangle({
                             x: (annotation.x / 100) * width,
                             y: height - (annotation.y / 100) * height - ((annotation.height || 0) / 100) * height,
                             width: ((annotation.width || 0) / 100) * width,
                             height: ((annotation.height || 0) / 100) * height,
+                            borderColor: color,
+                            borderWidth: annotation.strokeWidth || 2,
                             opacity,
+                            rotate: { type: 'degrees', angle: rotationAngle } as never,
                         });
-                    } catch (e) {
-                        console.error("Failed to embed image:", e);
+                    } else if (annotation.type === "circle") {
+                        page.drawEllipse({
+                            x: (annotation.x / 100) * width + ((annotation.width || 0) / 200) * width,
+                            y: height - (annotation.y / 100) * height - ((annotation.height || 0) / 200) * height,
+                            xScale: ((annotation.width || 0) / 200) * width,
+                            yScale: ((annotation.height || 0) / 200) * height,
+                            borderColor: color,
+                            borderWidth: annotation.strokeWidth || 2,
+                            opacity,
+                            rotate: { type: 'degrees', angle: rotationAngle } as never,
+                        });
+                    } else if (annotation.type === "image" && annotation.content) {
+                        try {
+                            const base64Data = annotation.content.split(',')[1];
+                            const imageBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+                            let embeddedImage;
+                            if (annotation.content.includes("image/png")) {
+                                embeddedImage = await pdf.embedPng(imageBytes);
+                            } else {
+                                embeddedImage = await pdf.embedJpg(imageBytes);
+                            }
+                            page.drawImage(embeddedImage, {
+                                x: (annotation.x / 100) * width,
+                                y: height - (annotation.y / 100) * height - ((annotation.height || 0) / 100) * height,
+                                width: ((annotation.width || 0) / 100) * width,
+                                height: ((annotation.height || 0) / 100) * height,
+                                opacity,
+                                rotate: { type: 'degrees', angle: rotationAngle } as never,
+                            });
+                        } catch (e) {
+                            console.error("Failed to embed image:", e);
+                        }
                     }
                 }
             }
@@ -403,8 +461,8 @@ export default function EditPDFPage() {
         setTotalPages(0);
         setPageImages([]);
         setAnnotations([]);
-        setIsAddingText(false);
         setSelectedAnnotationId(null);
+        setEditingAnnotationId(null);
     };
 
     const currentPageAnnotations = annotations.filter(a => a.page === currentPage);
@@ -531,9 +589,16 @@ export default function EditPDFPage() {
                                         <ChevronRight className="w-4 h-4" />
                                     </button>
                                 </div>
-                                <div className="w-px h-4 bg-gray-200" />
-                                <button
-                                    onClick={handleApplyEdits}
+                                    <button
+                                        onClick={() => setShowGrid(!showGrid)}
+                                        className={`p-1.5 rounded-md transition-colors ${showGrid ? "bg-black text-white" : "hover:bg-gray-100 text-gray-400"}`}
+                                        title="Toggle Grid"
+                                    >
+                                        <Square className="w-4 h-4" />
+                                    </button>
+                                    <div className="w-px h-4 bg-gray-200" />
+                                    <button
+                                        onClick={handleApplyEdits}
                                     className="px-4 py-1.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors flex items-center gap-2"
                                 >
                                     <Download className="w-4 h-4" />
@@ -543,7 +608,7 @@ export default function EditPDFPage() {
 
                             {/* Actual PDF Page Canvas */}
                             <div
-                                ref={canvasRef}
+                                ref={workspaceRef}
                                 className="relative bg-white shadow-2xl origin-top transition-transform duration-200"
                                 style={{
                                     width: (pageDimensions[currentPage]?.width || 0) * zoom,
@@ -566,98 +631,176 @@ export default function EditPDFPage() {
                                     />
                                 )}
 
-                                {/* Render All Page Annotations */}
-                                {currentPageAnnotations.map((anno) => (
-                                    <div
-                                        key={anno.id}
-                                        onClick={(e) => {
-                                            if (selectedTool === "select") {
-                                                e.stopPropagation();
-                                                setSelectedAnnotationId(anno.id);
-                                            }
-                                        }}
-                                        className={`absolute select-none ${selectedAnnotationId === anno.id ? "ring-2 ring-blue-500 ring-offset-2 z-10" : ""
-                                            }`}
-                                        style={{
-                                            left: `${anno.x}%`,
-                                            top: `${anno.y}%`,
-                                            width: anno.width ? `${anno.width}%` : "auto",
-                                            height: anno.height ? `${anno.height}%` : "auto",
-                                            color: anno.color,
-                                            opacity: anno.opacity,
-                                            cursor: selectedTool === "select" ? "move" : "inherit"
-                                        }}
-                                    >
-                                        {anno.type === "text" && (
-                                            <div style={{ fontSize: `${(anno.fontSize || 14) * zoom}px`, whiteSpace: "nowrap" }}>
-                                                {anno.content}
-                                            </div>
-                                        )}
-                                        {anno.type === "rectangle" && (
-                                            <div
-                                                className="w-full h-full border-2"
-                                                style={{ borderColor: anno.color, borderWidth: anno.strokeWidth }}
-                                            />
-                                        )}
-                                        {anno.type === "circle" && (
-                                            <div
-                                                className="w-full h-full border-2 rounded-full"
-                                                style={{ borderColor: anno.color, borderWidth: anno.strokeWidth }}
-                                            />
-                                        )}
-                                        {anno.type === "image" && anno.content && (
-                                            <Image 
-                                                src={anno.content} 
-                                                alt="" 
-                                                fill
-                                                className="w-full h-full"
-                                                unoptimized
-                                            />
-                                        )}
-                                        {anno.type === "draw" && anno.path && (
-                                            <svg
-                                                className="absolute inset-0 pointer-events-none overflow-visible"
-                                                style={{ width: "100%", height: "100%" }}
-                                            >
-                                                <polyline
-                                                    points={anno.path.map(p => `${(p.x - anno.x)}%,${(p.y - anno.y)}%`).join(" ")}
-                                                    fill="none"
-                                                    stroke={anno.color}
-                                                    strokeWidth={anno.strokeWidth || 2}
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                />
-                                            </svg>
-                                        )}
-                                    </div>
-                                ))}
-
-                                {/* Overlay for Text Input */}
-                                {isAddingText && (
-                                    <div
-                                        className="absolute z-20 bg-white shadow-xl border border-gray-200 rounded-lg p-2 flex flex-col gap-2"
-                                        style={{ left: `${textPosition.x}%`, top: `${textPosition.y}%` }}
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <textarea
-                                            autoFocus
-                                            value={textInput}
-                                            onChange={(e) => setTextInput(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" && !e.shiftKey) {
-                                                    e.preventDefault();
-                                                    addTextAnnotation();
-                                                }
-                                            }}
-                                            placeholder="Type something..."
-                                            className="w-48 h-20 text-sm p-2 bg-gray-50 border border-gray-100 rounded outline-none resize-none"
-                                        />
-                                        <div className="flex justify-end gap-2">
-                                            <button onClick={() => setIsAddingText(false)} className="text-[10px] text-gray-400 hover:text-black">Cancel</button>
-                                            <button onClick={addTextAnnotation} className="px-2 py-1 bg-black text-white text-[10px] rounded">Add</button>
-                                        </div>
-                                    </div>
+                                {showGrid && (
+                                    <div className="absolute inset-0 pointer-events-none opacity-10" style={{ 
+                                        backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)',
+                                        backgroundSize: '20px 20px'
+                                    }} />
                                 )}
+
+                                {/* Render All Page Annotations */}
+                                {currentPageAnnotations.map((anno) => {
+                                    const isSelected = selectedAnnotationId === anno.id;
+                                    
+                                    const startAnnotationDrag = (e: React.MouseEvent | React.TouchEvent) => {
+                                        e.stopPropagation();
+                                        setSelectedAnnotationId(anno.id);
+                                        setIsDragging(true);
+                                        
+                                        if (!workspaceRef.current) return;
+                                        const rect = workspaceRef.current.getBoundingClientRect();
+                                        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+                                        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+                                        const x = ((clientX - rect.left) / rect.width) * 100;
+                                        const y = ((clientY - rect.top) / rect.height) * 100;
+                                        
+                                        dragOffset.current = {
+                                            x: x - (anno.x || 0),
+                                            y: y - (anno.y || 0)
+                                        };
+                                    };
+                                    
+                                    return (
+                                        <motion.div
+                                            key={anno.id}
+                                            layout
+                                            onMouseDown={startAnnotationDrag}
+                                            onTouchStart={startAnnotationDrag}
+                                            className={`absolute select-none transition-all duration-75 ${
+                                                isSelected 
+                                                ? "ring-2 ring-blue-500 ring-offset-2 z-50 shadow-xl" 
+                                                : "z-10 hover:ring-1 hover:ring-blue-300"
+                                            } ${isDragging && isSelected ? "scale-[1.02] opacity-90" : ""}`}
+                                            style={{
+                                                left: `${anno.x}%`,
+                                                top: `${anno.y}%`,
+                                                width: anno.width ? `${anno.width}%` : "auto",
+                                                height: anno.height ? `${anno.height}%` : "auto",
+                                                color: anno.color,
+                                                opacity: anno.opacity,
+                                                transform: `rotate(${anno.rotation || 0}deg)`,
+                                                cursor: isDragging && isSelected ? "grabbing" : "grab"
+                                            }}
+                                        >
+                                        <div className="relative w-full h-full min-w-[20px] min-h-[20px] flex items-center justify-center">
+                                            {anno.type === "text" && (
+                                                <div 
+                                                    onDoubleClick={() => setEditingAnnotationId(anno.id)}
+                                                    className="relative cursor-text px-1 group"
+                                                >
+                                                    {editingAnnotationId === anno.id ? (
+                                                        <textarea
+                                                            autoFocus
+                                                            className="bg-transparent border-none outline-none resize-none p-0 m-0 overflow-hidden text-center min-w-[50px]"
+                                                            style={{ 
+                                                                fontSize: `${(anno.fontSize || 14) * zoom}px`,
+                                                                fontFamily: anno.fontFamily || 'inherit',
+                                                                height: '1.2em',
+                                                                width: `${(anno.content?.length || 5) * 0.8}ch`
+                                                            }}
+                                                            value={anno.content}
+                                                            onChange={(e) => updateAnnotationProperty(anno.id, "content", e.target.value)}
+                                                            onBlur={() => setEditingAnnotationId(null)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                                    e.preventDefault();
+                                                                    setEditingAnnotationId(null);
+                                                                }
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div style={{ 
+                                                            fontSize: `${(anno.fontSize || 14) * zoom}px`, 
+                                                            fontFamily: anno.fontFamily || 'inherit',
+                                                            whiteSpace: "nowrap" 
+                                                        }}>
+                                                            {anno.content || "Type here..."}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {anno.type === "rectangle" && (
+                                                <div
+                                                    className="w-full h-full border-2"
+                                                    style={{ borderColor: anno.color, borderWidth: anno.strokeWidth }}
+                                                />
+                                            )}
+                                            {anno.type === "circle" && (
+                                                <div
+                                                    className="w-full h-full border-2 rounded-full"
+                                                    style={{ borderColor: anno.color, borderWidth: anno.strokeWidth }}
+                                                />
+                                            )}
+                                            {anno.type === "image" && anno.content && (
+                                                <div className="w-full h-full relative">
+                                                    <Image 
+                                                        src={anno.content} 
+                                                        alt="" 
+                                                        fill
+                                                        className="object-contain pointer-events-none"
+                                                        unoptimized
+                                                    />
+                                                </div>
+                                            )}
+                                            {anno.type === "draw" && anno.path && (
+                                                <svg
+                                                    className="absolute inset-0 pointer-events-none overflow-visible"
+                                                    style={{ width: "100%", height: "100%" }}
+                                                >
+                                                    <polyline
+                                                        points={anno.path.map(p => `${(p.x - anno.x)}%,${(p.y - anno.y)}%`).join(" ")}
+                                                        fill="none"
+                                                        stroke={anno.color}
+                                                        strokeWidth={anno.strokeWidth || 2}
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    />
+                                                </svg>
+                                            )}
+
+                                            {/* Interactive Handles for Selected Annotation */}
+                                            {isSelected && (
+                                                <>
+                                                    {/* Rotation Handle */}
+                                                    <div 
+                                                        className="absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 group/rotate px-2 py-4"
+                                                        onMouseDown={(e) => { e.stopPropagation(); setIsRotating(true); }}
+                                                        onTouchStart={(e) => { e.stopPropagation(); setIsRotating(true); }}
+                                                    >
+                                                        <div className="w-5 h-5 bg-blue-500 rounded-full shadow-lg flex items-center justify-center cursor-alias transition-transform group-hover/rotate:scale-125">
+                                                            <Rotate className="w-3 h-3 text-white" />
+                                                        </div>
+                                                        <div className="w-0.5 h-4 bg-blue-500/40" />
+                                                    </div>
+
+                                                    {/* Corner Resize Handles */}
+                                                    {[
+                                                        { pos: "-top-1 -left-1", cursor: "nw-resize" },
+                                                        { pos: "-top-1 -right-1", cursor: "ne-resize" },
+                                                        { pos: "-bottom-1 -left-1", cursor: "sw-resize" },
+                                                        { pos: "-bottom-1 -right-1", cursor: "se-resize" },
+                                                    ].map((handle, i) => (
+                                                        <div 
+                                                            key={i}
+                                                            className={`absolute ${handle.pos} w-2.5 h-2.5 bg-white border-2 border-blue-500 rounded-full shadow-sm z-50`}
+                                                            style={{ cursor: handle.cursor }}
+                                                            onMouseDown={(e) => { e.stopPropagation(); setIsResizing(true); }}
+                                                            onTouchStart={(e) => { e.stopPropagation(); setIsResizing(true); }}
+                                                        />
+                                                    ))}
+
+                                                    {/* Live HUD */}
+                                                    {(isResizing || isRotating) && (
+                                                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[8px] px-2 py-0.5 rounded whitespace-nowrap backdrop-blur-sm shadow-xl">
+                                                            {isResizing ? `${Math.round(anno.width || 0)}x${Math.round(anno.height || 0)}%` : `${Math.round(anno.rotation || 0)}°`}
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                    );
+                                })}
 
                                 {/* Rendering Current Drawing Path */}
                                 {isDrawing && (
@@ -732,7 +875,7 @@ export default function EditPDFPage() {
                                         <input
                                             type="range"
                                             min={selectedAnnotation?.type === "text" ? "8" : "1"}
-                                            max={selectedAnnotation?.type === "text" ? "48" : "20"}
+                                            max={selectedAnnotation?.type === "text" ? "72" : "20"}
                                             value={selectedAnnotation?.type === "text" ? (selectedAnnotation.fontSize || currentFontSize) : (selectedAnnotation?.strokeWidth || currentStrokeWidth)}
                                             onChange={(e) => {
                                                 const val = parseInt(e.target.value);
@@ -746,6 +889,28 @@ export default function EditPDFPage() {
                                             className="w-full accent-black h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
                                         />
                                     </div>
+
+                                    {/* Font Family (Only for Text) */}
+                                    {(selectedAnnotation?.type === "text" || selectedTool === "text") && (
+                                        <div>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase mb-3 block">Font Family</label>
+                                            <select 
+                                                value={selectedAnnotation?.fontFamily || currentFontFamily}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (selectedAnnotationId) updateAnnotationProperty(selectedAnnotationId, "fontFamily", val);
+                                                    else setCurrentFontFamily(val);
+                                                }}
+                                                className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs outline-none"
+                                            >
+                                                {fonts.map(f => (
+                                                    <option key={f} value={f} style={{ fontFamily: f }}>
+                                                        {f.split(',')[0].replace(/'/g, '')}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
 
                                     {/* Opacity Slider */}
                                     <div>
@@ -766,6 +931,28 @@ export default function EditPDFPage() {
                                             }}
                                             className="w-full accent-black h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
                                         />
+                                    </div>
+
+                                    {/* Batch Control */}
+                                    <div className="pt-4 border-t border-gray-50">
+                                        <button 
+                                            onClick={() => {
+                                                if (selectedAnnotationId) {
+                                                    const current = annotations.find(a => a.id === selectedAnnotationId);
+                                                    updateAnnotationProperty(selectedAnnotationId, "isBatch", !current?.isBatch);
+                                                }
+                                            }}
+                                            className={`w-full p-4 rounded-xl border flex items-center justify-between transition-all ${selectedAnnotation?.isBatch ? "bg-black text-white" : "bg-gray-50 text-gray-400 hover:text-black hover:bg-gray-100"}`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <RefreshCw className={`w-4 h-4 ${selectedAnnotation?.isBatch ? "animate-spin" : ""}`} />
+                                                <span className="text-xs font-bold uppercase tracking-widest">Apply to All Pages</span>
+                                            </div>
+                                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedAnnotation?.isBatch ? "border-white bg-white/20" : "border-gray-200"}`}>
+                                                {selectedAnnotation?.isBatch && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                                            </div>
+                                        </button>
+                                        <p className="text-[10px] text-gray-400 mt-2 italic px-1">Duplicates this annotation to every page in the PDF.</p>
                                     </div>
 
                                     {selectedAnnotationId && (
