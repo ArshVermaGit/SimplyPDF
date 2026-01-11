@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, FileText, ArrowRight } from "lucide-react";
+import { Upload, Download, CheckCircle2, RefreshCw, AlertCircle, FileText, ArrowRight } from "lucide-react";
 import { formatFileSize } from "@/lib/pdf-utils";
 import {
     AnimatedBackground,
@@ -64,7 +64,7 @@ export default function PDFToWordPage() {
             const pdfDoc = await loadingTask.promise;
             const numPages = pdfDoc.numPages;
 
-            const paragraphs: any[] = [];
+            const paragraphs: unknown[] = [];
 
             for (let i = 1; i <= numPages; i++) {
                 setProgress(Math.round((i / numPages) * 100));
@@ -73,7 +73,7 @@ export default function PDFToWordPage() {
                 const textContent = await page.getTextContent();
 
                 // Group by Y position to form lines
-                const items = textContent.items as any[];
+                const items = textContent.items as { transform: number[]; str: string }[];
                 const lines: { [y: number]: string[] } = {};
 
                 items.forEach(item => {
@@ -104,14 +104,15 @@ export default function PDFToWordPage() {
                     }
                 }
 
-                (page as any).cleanup?.();
+                (page as { cleanup?: () => void }).cleanup?.();
             }
 
             // Create Word document
             const doc = new docx.Document({
                 sections: [{
                     properties: {},
-                    children: paragraphs,
+                    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                    children: paragraphs as any,
                 }],
             });
 
@@ -124,9 +125,10 @@ export default function PDFToWordPage() {
             }
 
             await pdfDoc.destroy();
-        } catch (error: any) {
-            console.error(error);
-            setErrorMessage(error instanceof Error ? error.message : "Failed to convert PDF to Word");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error(err);
+            setErrorMessage(err.message || "Failed to convert PDF to Word");
             setStatus("error");
         }
     };
