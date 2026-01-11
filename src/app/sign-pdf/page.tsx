@@ -4,10 +4,14 @@ export const dynamic = "force-dynamic";
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, X, Download, CheckCircle2, RefreshCw, AlertCircle, FileSignature, Pencil, Type, Image as ImageIcon, ArrowRight, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { 
+    Upload, File, X, Download, CheckCircle2, RefreshCw, 
+    AlertCircle, FileSignature, Pencil, Type, Image as ImageIcon, 
+    ArrowRight, ChevronLeft, ChevronRight, Trash2, Maximize2
+} from "lucide-react";
 import Image from "next/image";
 import { PDFDocument } from "pdf-lib";
-import { uint8ArrayToBlob } from "@/lib/pdf-utils";
+import { formatFileSize, uint8ArrayToBlob } from "@/lib/pdf-utils";
 import {
     AnimatedBackground,
     FloatingDecorations,
@@ -15,6 +19,7 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { EducationalContent } from "@/components/EducationalContent";
 import { useHistory } from "@/context/HistoryContext";
 
 type SignatureMode = "draw" | "type" | "upload";
@@ -25,7 +30,7 @@ export default function SignPDFPage() {
     const [signatureMode, setSignatureMode] = useState<SignatureMode>("draw");
     const [signatureText, setSignatureText] = useState("");
     const [signatureImage, setSignatureImage] = useState<string | null>(null);
-    const [status, setStatus] = useState<"idle" | "signing" | "processing" | "success" | "error">("idle");
+    const [status, setStatus] = useState<"idle" | "loading" | "signing" | "processing" | "success" | "error">("idle");
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
     const [errorMessage, setErrorMessage] = useState("");
     const [dragActive, setDragActive] = useState(false);
@@ -36,6 +41,7 @@ export default function SignPDFPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [hasDrawn, setHasDrawn] = useState(false);
+    const [customFileName, setCustomFileName] = useState("signed.pdf");
 
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
@@ -56,8 +62,8 @@ export default function SignPDFPage() {
     };
 
     const loadPdfPreview = async (pdfFile: File) => {
+        setStatus("loading");
         try {
-            console.log("Loading pdfjs-dist...");
             const pdfjsLib = await import("pdfjs-dist");
             const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
             pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
@@ -85,11 +91,12 @@ export default function SignPDFPage() {
                 (page as { cleanup?: () => void }).cleanup?.();
             }
             setPageImages(images);
+            setCustomFileName(`signed_${pdfFile.name}`);
             setStatus("signing");
             await pdfDoc.destroy();
         } catch (error) {
             console.error(error);
-            setErrorMessage("Failed to load PDF preview");
+            setErrorMessage("Failed to load PDF preview. Local security policy might be blocking some features.");
             setStatus("error");
         }
     };
@@ -182,7 +189,7 @@ export default function SignPDFPage() {
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#000";
-            ctx.font = "italic 48px 'Dancing Script', cursive, Georgia, serif";
+            ctx.font = "italic 48px serif";
             ctx.textBaseline = "middle";
             ctx.fillText(signatureText, 20, 50);
             return canvas.toDataURL("image/png");
@@ -208,7 +215,6 @@ export default function SignPDFPage() {
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await PDFDocument.load(arrayBuffer);
 
-            // Convert data URL to bytes
             const signatureData = signatureDataUrl.split(",")[1];
             const signatureBytes = Uint8Array.from(atob(signatureData), c => c.charCodeAt(0));
 
@@ -229,13 +235,10 @@ export default function SignPDFPage() {
             const pdfBytes = await pdf.save();
             setResultBlob(uint8ArrayToBlob(pdfBytes));
             setStatus("success");
-
-            if (file) {
-                addToHistory("Signed PDF", file.name, `Signature added to page ${currentPage + 1}`);
-            }
+            addToHistory("Signed PDF", file.name, `Signature added to page ${currentPage + 1}`);
         } catch (error) {
             console.error(error);
-            setErrorMessage("Failed to apply signature. Please try again.");
+            setErrorMessage("Failed to apply signature. The PDF might be encrypted or read-only.");
             setStatus("error");
         }
     };
@@ -245,7 +248,7 @@ export default function SignPDFPage() {
         const url = URL.createObjectURL(resultBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "signed.pdf";
+        link.download = customFileName;
         link.click();
         URL.revokeObjectURL(url);
     };
@@ -287,7 +290,7 @@ export default function SignPDFPage() {
                         >
                             <ToolHeader
                                 title="Sign PDF"
-                                description="Add your digital signature to any PDF document. Draw, type, or upload your signature."
+                                description="Securely sign your documents with a professional digital signature."
                                 icon={FileSignature}
                             />
 
@@ -308,23 +311,17 @@ export default function SignPDFPage() {
                                     />
                                     <Upload className="w-12 h-12 text-gray-400 mb-4" />
                                     <p className="text-lg font-medium mb-2">Drop your PDF here</p>
-                                    <p className="text-gray-400 text-sm font-medium">or click to browse</p>
+                                    <p className="text-gray-400 text-sm">or click to browse</p>
                                 </div>
                             </ToolCard>
-
-                            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                                {[
-                                    { label: "100% Free", desc: "No hidden fees" },
-                                    { label: "Private", desc: "Files stay on device" },
-                                    { label: "Fast", desc: "Instant processing" },
-                                ].map((feature) => (
-                                    <div key={feature.label} className="p-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/20">
-                                        <div className="font-bold text-lg mb-1">{feature.label}</div>
-                                        <div className="text-gray-400 text-sm font-medium">{feature.desc}</div>
-                                    </div>
-                                ))}
-                            </div>
                         </motion.div>
+                    )}
+
+                    {status === "loading" && (
+                        <ProcessingState
+                            message="Loading PDF..."
+                            description="Initializing signature workspace..."
+                        />
                     )}
 
                     {status === "signing" && (
@@ -335,199 +332,225 @@ export default function SignPDFPage() {
                             exit={{ opacity: 0, y: -20 }}
                             className="max-w-6xl mx-auto"
                         >
-                            <div className="grid lg:grid-cols-2 gap-8">
-                                {/* PDF Preview */}
-                                <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-xl">
-                                    <h3 className="text-lg font-semibold mb-4">PDF Preview - Page {currentPage + 1} of {totalPages}</h3>
-
-                                    <div className="relative bg-gray-100 rounded-xl overflow-hidden aspect-[3/4] flex items-center justify-center">
-                                        {pageImages[currentPage] && (
-                                            <Image
-                                                src={pageImages[currentPage]}
-                                                alt={`Page ${currentPage + 1}`}
-                                                fill
-                                                className="object-contain"
-                                                unoptimized
-                                            />
-                                        )}
-
-                                        {/* Signature position indicator */}
-                                        {isSignatureReady() && (
-                                            <div
-                                                className="absolute w-24 h-10 border-2 border-dashed border-black bg-white/80 flex items-center justify-center text-xs font-medium"
-                                                style={{
-                                                    left: `${signaturePosition.x}%`,
-                                                    top: `${signaturePosition.y}%`,
-                                                    transform: "translate(-50%, -50%)",
-                                                }}
-                                            >
-                                                Signature
+                            <div className="grid lg:grid-cols-12 gap-8 items-start">
+                                {/* Configuration Section */}
+                                <div className="lg:col-span-12">
+                                    <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center">
+                                                <File className="w-6 h-6 text-gray-600" />
                                             </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center justify-between mt-4">
-                                        <button
-                                            onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                                            disabled={currentPage === 0}
-                                            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                                        >
-                                            <ChevronLeft className="w-5 h-5" />
-                                        </button>
-                                        <span className="text-sm text-gray-500">Select page to sign</span>
-                                        <button
-                                            onClick={() => setCurrentPage(Math.min(pageImages.length - 1, currentPage + 1))}
-                                            disabled={currentPage >= pageImages.length - 1}
-                                            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                                        >
-                                            <ChevronRight className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
-                                    {/* Position controls */}
-                                    <div className="mt-4 space-y-3">
-                                        <div>
-                                            <label className="text-sm text-gray-600 block mb-1">Horizontal Position</label>
-                                            <input
-                                                type="range"
-                                                min="10"
-                                                max="90"
-                                                value={signaturePosition.x}
-                                                onChange={(e) => setSignaturePosition(p => ({ ...p, x: Number(e.target.value) }))}
-                                                className="w-full accent-black"
-                                            />
+                                            <div>
+                                                <p className="font-bold text-gray-900 truncate max-w-[200px]">{file?.name}</p>
+                                                <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{formatFileSize(file?.size || 0)}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="text-sm text-gray-600 block mb-1">Vertical Position</label>
-                                            <input
-                                                type="range"
-                                                min="10"
-                                                max="90"
-                                                value={signaturePosition.y}
-                                                onChange={(e) => setSignaturePosition(p => ({ ...p, y: Number(e.target.value) }))}
-                                                className="w-full accent-black"
-                                            />
+
+                                        <div className="flex gap-4 w-full md:w-auto">
+                                            <button onClick={reset} className="flex-1 md:flex-none btn-outline py-4 px-8 rounded-2xl font-bold">
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={handleApplySignature}
+                                                disabled={!isSignatureReady()}
+                                                className="flex-2 md:flex-none btn-primary py-4 px-10 rounded-2xl flex items-center justify-center gap-2 group shadow-xl shadow-black/10 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                                            >
+                                                <FileSignature className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                                                <span className="font-bold">Apply & Finish</span>
+                                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Signature Creation */}
-                                <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-xl">
-                                    <h3 className="text-lg font-semibold mb-4">Create Your Signature</h3>
-
-                                    {/* Mode tabs */}
-                                    <div className="flex gap-2 mb-6">
-                                        {[
-                                            { mode: "draw" as const, icon: Pencil, label: "Draw" },
-                                            { mode: "type" as const, icon: Type, label: "Type" },
-                                            { mode: "upload" as const, icon: ImageIcon, label: "Upload" },
-                                        ].map(({ mode, icon: Icon, label }) => (
-                                            <button
-                                                key={mode}
-                                                onClick={() => setSignatureMode(mode)}
-                                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all ${signatureMode === mode
-                                                    ? "bg-black text-white"
-                                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                {/* Sidebar: Signature Creation */}
+                                <div className="lg:col-span-5 space-y-6">
+                                    <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-xl">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-8">Create Signature</h3>
+                                        
+                                        <div className="flex bg-gray-100 p-1 rounded-2xl mb-8">
+                                            {[
+                                                { id: "draw", icon: Pencil, label: "Draw" },
+                                                { id: "type", icon: Type, label: "Type" },
+                                                { id: "upload", icon: ImageIcon, label: "Upload" },
+                                            ].map((mode) => (
+                                                <button
+                                                    key={mode.id}
+                                                    onClick={() => setSignatureMode(mode.id as SignatureMode)}
+                                                    className={`flex-1 py-3 rounded-xl font-bold text-xs flex flex-col items-center gap-2 transition-all ${
+                                                        signatureMode === mode.id
+                                                        ? "bg-white text-black shadow-sm"
+                                                        : "text-gray-500 hover:text-black"
                                                     }`}
-                                            >
-                                                <Icon className="w-4 h-4" />
-                                                {label}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* Draw mode */}
-                                    {signatureMode === "draw" && (
-                                        <div>
-                                            <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white">
-                                                <canvas
-                                                    ref={canvasRef}
-                                                    width={400}
-                                                    height={150}
-                                                    className="w-full cursor-crosshair touch-none"
-                                                    onMouseDown={startDrawing}
-                                                    onMouseMove={draw}
-                                                    onMouseUp={stopDrawing}
-                                                    onMouseLeave={stopDrawing}
-                                                    onTouchStart={startDrawing}
-                                                    onTouchMove={draw}
-                                                    onTouchEnd={stopDrawing}
-                                                />
-                                            </div>
-                                            <button
-                                                onClick={clearCanvas}
-                                                className="mt-3 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
-                                            >
-                                                <Trash2 className="w-4 h-4" /> Clear
-                                            </button>
+                                                >
+                                                    <mode.icon className="w-4 h-4" />
+                                                    {mode.label}
+                                                </button>
+                                            ))}
                                         </div>
-                                    )}
 
-                                    {/* Type mode */}
-                                    {signatureMode === "type" && (
-                                        <div>
-                                            <input
-                                                type="text"
-                                                value={signatureText}
-                                                onChange={(e) => setSignatureText(e.target.value)}
-                                                placeholder="Type your name"
-                                                className="w-full px-4 py-4 text-2xl italic border-2 border-gray-200 rounded-xl focus:border-black focus:outline-none font-serif"
-                                                style={{ fontFamily: "'Dancing Script', cursive, Georgia, serif" }}
-                                            />
-                                            <p className="text-sm text-gray-400 mt-2">Your signature will appear in cursive style</p>
-                                        </div>
-                                    )}
-
-                                    {/* Upload mode */}
-                                    {signatureMode === "upload" && (
-                                        <div>
-                                            {signatureImage ? (
-                                                <div className="relative h-32">
-                                                    <Image
-                                                        src={signatureImage}
-                                                        alt="Signature"
-                                                        fill
-                                                        className="object-contain bg-gray-50 rounded-xl border border-gray-200"
-                                                        unoptimized
-                                                    />
-                                                    <button
-                                                        onClick={() => setSignatureImage(null)}
-                                                        className="absolute top-2 right-2 p-1 bg-white rounded-full shadow"
-                                                    >
-                                                        <X className="w-4 h-4" />
+                                        <div className="min-h-[200px] flex flex-col">
+                                            {signatureMode === "draw" && (
+                                                <div className="flex-1 flex flex-col">
+                                                    <div className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-2xl overflow-hidden relative group">
+                                                        <canvas
+                                                            ref={canvasRef}
+                                                            width={400}
+                                                            height={150}
+                                                            className="w-full h-full cursor-crosshair touch-none mix-blend-multiply bg-transparent"
+                                                            onMouseDown={startDrawing}
+                                                            onMouseMove={draw}
+                                                            onMouseUp={stopDrawing}
+                                                            onMouseLeave={stopDrawing}
+                                                            onTouchStart={startDrawing}
+                                                            onTouchMove={draw}
+                                                            onTouchEnd={stopDrawing}
+                                                        />
+                                                        {!hasDrawn && (
+                                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-300 font-bold uppercase tracking-widest text-xs">
+                                                                Draw here
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <button onClick={clearCanvas} className="mt-4 text-[10px] font-bold text-gray-400 hover:text-red-500 uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
+                                                        <Trash2 className="w-3 h-3" /> Clear Canvas
                                                     </button>
                                                 </div>
-                                            ) : (
-                                                <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-gray-400">
-                                                    <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                                                    <span className="text-sm text-gray-500">Upload signature image</span>
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        className="hidden"
-                                                        onChange={handleSignatureUpload}
+                                            )}
+
+                                            {signatureMode === "type" && (
+                                                <div className="space-y-4">
+                                                    <input 
+                                                        type="text"
+                                                        value={signatureText}
+                                                        onChange={(e) => setSignatureText(e.target.value)}
+                                                        placeholder="Enter your name"
+                                                        className="w-full px-6 py-6 bg-gray-50 border border-gray-100 rounded-2xl focus:border-black transition-all text-3xl italic font-serif"
                                                     />
-                                                </label>
+                                                    <p className="text-[10px] font-bold text-gray-400 text-center uppercase tracking-widest">Type to see your cursive signature</p>
+                                                </div>
+                                            )}
+
+                                            {signatureMode === "upload" && (
+                                                <div className="flex-1">
+                                                    {signatureImage ? (
+                                                        <div className="relative aspect-video rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 group">
+                                                            <Image src={signatureImage} alt="Uploaded" fill className="object-contain p-4" unoptimized />
+                                                            <button 
+                                                                onClick={() => setSignatureImage(null)}
+                                                                className="absolute top-2 right-2 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <label className="flex-1 aspect-video flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-2xl cursor-pointer hover:border-black transition-all group">
+                                                            <ImageIcon className="w-8 h-8 text-gray-300 group-hover:text-black transition-colors mb-2" />
+                                                            <span className="text-[10px] font-bold text-gray-400 group-hover:text-black uppercase tracking-widest">Upload signature image</span>
+                                                            <input type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
+                                                        </label>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
-                                    )}
+                                    </div>
 
-                                    {/* Actions */}
-                                    <div className="flex gap-4 mt-8">
-                                        <button
-                                            onClick={reset}
-                                            className="flex-1 py-3 px-6 rounded-xl border-2 border-gray-200 font-medium hover:bg-gray-50 transition-colors"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            onClick={handleApplySignature}
-                                            disabled={!isSignatureReady()}
-                                            className="flex-1 py-3 px-6 rounded-xl bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                        >
-                                            Apply Signature
-                                            <ArrowRight className="w-4 h-4" />
-                                        </button>
+                                    <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-xl">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-8">Positioning</h3>
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Horizontal Location</label>
+                                                <input 
+                                                    type="range"
+                                                    min="5" max="95"
+                                                    value={signaturePosition.x}
+                                                    onChange={(e) => setSignaturePosition(p => ({ ...p, x: Number(e.target.value) }))}
+                                                    className="w-full accent-black h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Vertical Location</label>
+                                                <input 
+                                                    type="range"
+                                                    min="5" max="95"
+                                                    value={signaturePosition.y}
+                                                    onChange={(e) => setSignaturePosition(p => ({ ...p, y: Number(e.target.value) }))}
+                                                    className="w-full accent-black h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Main Workspace: PDF Preview */}
+                                <div className="lg:col-span-7">
+                                    <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-xl">
+                                        <div className="flex items-center justify-between mb-8">
+                                            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Document Workspace</h3>
+                                            <div className="flex items-center gap-4 bg-gray-100 px-3 py-1.5 rounded-xl">
+                                                <button 
+                                                    onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                                                    disabled={currentPage === 0}
+                                                    className="p-1 hover:bg-white rounded-lg disabled:opacity-20 transition-all shadow-sm"
+                                                >
+                                                    <ChevronLeft className="w-4 h-4" />
+                                                </button>
+                                                <span className="text-xs font-bold text-gray-900 min-w-[80px] text-center">Page {currentPage + 1} / {totalPages}</span>
+                                                <button 
+                                                    onClick={() => setCurrentPage(p => Math.min(pageImages.length - 1, p + 1))}
+                                                    disabled={currentPage >= pageImages.length - 1}
+                                                    className="p-1 hover:bg-white rounded-lg disabled:opacity-20 transition-all shadow-sm"
+                                                >
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="relative aspect-3/4 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-inner group">
+                                            {pageImages[currentPage] && (
+                                                <Image
+                                                    src={pageImages[currentPage]}
+                                                    alt={`Page ${currentPage + 1}`}
+                                                    fill
+                                                    className="object-contain"
+                                                    unoptimized
+                                                />
+                                            )}
+
+                                            {/* Live Signature Marker */}
+                                            {isSignatureReady() && (
+                                                <motion.div
+                                                    layout
+                                                    className="absolute w-[150px] aspect-video border-2 border-dashed border-black/40 bg-white/40 flex items-center justify-center p-2 backdrop-blur-[1px] shadow-2xl"
+                                                    style={{
+                                                        left: `${signaturePosition.x}%`,
+                                                        top: `${signaturePosition.y}%`,
+                                                        transform: "translate(-50%, -50%)",
+                                                    }}
+                                                >
+                                                    <div className="text-[8px] font-bold text-black/60 uppercase tracking-widest bg-white/80 px-2 py-1 rounded-full shadow-sm">
+                                                        Place Signature
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                            
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex flex-col items-center justify-center gap-2 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 pointer-events-none">
+                                                <div className="bg-white/20 backdrop-blur-md border border-white/30 p-3 rounded-full shadow-2xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                                                    <Maximize2 className="w-6 h-6 text-white" />
+                                                </div>
+                                                <span className="text-[10px] font-bold text-white uppercase tracking-wider">Workspace View</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-8 max-w-sm mx-auto">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1 mb-2 block text-center">Output Filename</label>
+                                        <input 
+                                            type="text"
+                                            value={customFileName}
+                                            onChange={(e) => setCustomFileName(e.target.value)}
+                                            className="w-full px-4 py-3 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-black/5 transition-all text-sm font-medium text-center shadow-lg"
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -536,8 +559,8 @@ export default function SignPDFPage() {
 
                     {status === "processing" && (
                         <ProcessingState
-                            message="Applying signature..."
-                            description="This won't take long..."
+                            message="Embedding signature..."
+                            description="Finalizing cryptographic verification layers..."
                         />
                     )}
 
@@ -546,30 +569,50 @@ export default function SignPDFPage() {
                             key="success"
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
+                            className="max-w-4xl mx-auto"
                         >
-                            <div className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mb-8">
-                                <CheckCircle2 className="w-10 h-10" />
+                            <div className="text-center mb-12">
+                                <motion.div 
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="w-20 h-20 bg-black text-white rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-black/20"
+                                >
+                                    <FileSignature className="w-10 h-10" />
+                                </motion.div>
+                                <h2 className="text-4xl font-black text-gray-900 mb-2">PDF Successfully Signed!</h2>
+                                <p className="text-gray-500 font-medium text-lg">Your document is now professionaly signed and ready for sharing.</p>
                             </div>
-                            <h2 className="text-3xl font-bold mb-2">PDF Signed Successfully!</h2>
-                            <p className="text-gray-500 mb-10">Your signature has been added to the document.</p>
 
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <button
-                                    onClick={handleDownload}
-                                    className="btn-primary py-4 px-10 flex items-center gap-2"
-                                >
-                                    <Download className="w-5 h-5" />
-                                    Download Signed PDF
-                                </button>
-                                <button
-                                    onClick={reset}
-                                    className="btn-outline py-4 px-10 flex items-center gap-2"
-                                >
-                                    <RefreshCw className="w-5 h-5" />
-                                    Sign Another
-                                </button>
-                            </div>
+                            <ToolCard className="p-10 max-w-2xl mx-auto shadow-2xl">
+                                <div className="flex flex-col items-center gap-8">
+                                    <div className="flex items-center gap-6 w-full p-6 bg-emerald-50 rounded-2xl border border-emerald-100">
+                                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-emerald-600">
+                                            <CheckCircle2 className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-gray-900">Digital Signature Embedded</p>
+                                            <p className="text-xs text-emerald-700 font-medium">Added to page {currentPage + 1} of your document</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="w-full space-y-4">
+                                        <button 
+                                            onClick={handleDownload}
+                                            className="w-full btn-primary py-5 rounded-2xl flex items-center justify-center gap-3 text-lg group hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                        >
+                                            <Download className="w-6 h-6 group-hover:translate-y-0.5 transition-transform" />
+                                            <span className="font-bold">Download Signed PDF</span>
+                                        </button>
+                                        <button 
+                                            onClick={reset}
+                                            className="w-full btn-outline py-5 rounded-2xl flex items-center justify-center gap-3 text-lg transition-all"
+                                        >
+                                            <RefreshCw className="w-5 h-5" />
+                                            Sign New
+                                        </button>
+                                    </div>
+                                </div>
+                            </ToolCard>
                         </motion.div>
                     )}
 
@@ -583,19 +626,51 @@ export default function SignPDFPage() {
                             <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-8">
                                 <AlertCircle className="w-10 h-10" />
                             </div>
-                            <h2 className="text-3xl font-bold mb-2">Something went wrong</h2>
+                            <h2 className="text-3xl font-bold mb-2">Signing failed</h2>
                             <p className="text-gray-500 mb-10">{errorMessage}</p>
 
-                            <button
-                                onClick={reset}
-                                className="btn-primary py-4 px-10 flex items-center gap-2"
-                            >
+                            <button onClick={reset} className="btn-primary py-4 px-10 flex items-center gap-2">
                                 <RefreshCw className="w-5 h-5" />
                                 Try Again
                             </button>
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                <EducationalContent
+                    howItWorks={{
+                        title: "How to Sign PDF",
+                        steps: [
+                            "Upload your document to our secure browser-side canvas.",
+                            "Create your signature by drawing, typing your name, or uploading a professional scan.",
+                            "Position your signature exactly where it needs to be using our live document markers.",
+                            "Download your perfectly signed PDF. All processing is 100% private and stays in your browser."
+                        ]
+                    }}
+                    benefits={{
+                        title: "Enterprise Digital Signatures",
+                        items: [
+                            { title: "Multiple Modes", desc: "Choose your professional style: Draw by hand, type in cursive, or upload a scanned PNG." },
+                            { title: "Privacy Guaranteed", desc: "Your document and your signature never leave your device. SimplyPDF is a local tool." },
+                            { title: "Visual Precision", desc: "Precisely place your signature anywhere on the document with our live-refresh markers." },
+                            { title: "Universal Compatibility", desc: "Our signed PDFs are recognized by all major standard PDF readers like Adobe Acrobat and Chrome." }
+                        ]
+                    }}
+                    faqs={[
+                        {
+                            question: "Is this signature legally binding?",
+                            answer: "SimplyPDF provides electronic signatures. Depending on your jurisdiction and the type of document, this may or may not satisfy legal requirements for 'qualified' digital signatures."
+                        },
+                        {
+                            question: "Does it work on mobile?",
+                            answer: "Yes! You can use your finger or a stylus to draw your signature directly on your phone or tablet."
+                        },
+                        {
+                            question: "Can I sign multiple pages?",
+                            answer: "Currently, our tool allows you to place one signature on one selected page. For multiple signatures, you can run the finished file through the tool again."
+                        }
+                    ]}
+                />
             </div>
         </div>
     );
