@@ -4,7 +4,8 @@ export const dynamic = "force-dynamic";
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, X, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, FileSignature, Pencil, Type, Image, ArrowRight, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Upload, File, X, Download, CheckCircle2, RefreshCw, AlertCircle, FileSignature, Pencil, Type, Image as ImageIcon, ArrowRight, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import Image from "next/image";
 import { PDFDocument } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 import {
@@ -79,9 +80,9 @@ export default function SignPDFPage() {
                 const context = canvas.getContext("2d")!;
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                await page.render({ canvasContext: context, viewport } as any).promise;
+                await page.render({ canvasContext: context, viewport }).promise;
                 images.push(canvas.toDataURL("image/jpeg", 0.5));
-                (page as any).cleanup?.();
+                (page as { cleanup?: () => void }).cleanup?.();
             }
             setPageImages(images);
             setStatus("signing");
@@ -341,10 +342,12 @@ export default function SignPDFPage() {
 
                                     <div className="relative bg-gray-100 rounded-xl overflow-hidden aspect-[3/4] flex items-center justify-center">
                                         {pageImages[currentPage] && (
-                                            <img
+                                            <Image
                                                 src={pageImages[currentPage]}
                                                 alt={`Page ${currentPage + 1}`}
-                                                className="max-w-full max-h-full object-contain"
+                                                fill
+                                                className="object-contain"
+                                                unoptimized
                                             />
                                         )}
 
@@ -417,7 +420,7 @@ export default function SignPDFPage() {
                                         {[
                                             { mode: "draw" as const, icon: Pencil, label: "Draw" },
                                             { mode: "type" as const, icon: Type, label: "Type" },
-                                            { mode: "upload" as const, icon: Image, label: "Upload" },
+                                            { mode: "upload" as const, icon: ImageIcon, label: "Upload" },
                                         ].map(({ mode, icon: Icon, label }) => (
                                             <button
                                                 key={mode}
@@ -479,11 +482,13 @@ export default function SignPDFPage() {
                                     {signatureMode === "upload" && (
                                         <div>
                                             {signatureImage ? (
-                                                <div className="relative">
-                                                    <img
+                                                <div className="relative h-32">
+                                                    <Image
                                                         src={signatureImage}
                                                         alt="Signature"
-                                                        className="w-full h-32 object-contain bg-gray-50 rounded-xl border border-gray-200"
+                                                        fill
+                                                        className="object-contain bg-gray-50 rounded-xl border border-gray-200"
+                                                        unoptimized
                                                     />
                                                     <button
                                                         onClick={() => setSignatureImage(null)}
