@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
     Upload, File, X, Download, CheckCircle2, RefreshCw, 
     AlertCircle, FileSignature, Pencil, Type, Image as ImageIcon, 
-    ArrowRight, ChevronLeft, ChevronRight, Trash2
+    ArrowRight, ChevronLeft, ChevronRight, Trash2, RotateCcw as Rotate
 } from "lucide-react";
 import Image from "next/image";
 import { PDFDocument } from "pdf-lib";
@@ -41,7 +41,15 @@ export default function SignPDFPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [hasDrawn, setHasDrawn] = useState(false);
+    const [drawCounter, setDrawCounter] = useState(0);
     const [customFileName, setCustomFileName] = useState("signed.pdf");
+    const [signatureColor, setSignatureColor] = useState("#000000");
+    const [signatureOpacity, setSignatureOpacity] = useState(1);
+    const [signatureRotation, setSignatureRotation] = useState(0);
+    const [targetPages, setTargetPages] = useState<"current" | "all" | "range">("current");
+    const [pageRange, setPageRange] = useState("");
+    const [showGrid, setShowGrid] = useState(false);
+    const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
 
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
@@ -110,11 +118,11 @@ export default function SignPDFPage() {
         if (!ctx) return;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height); // Transparent background
-        ctx.strokeStyle = "#000";
+        ctx.strokeStyle = signatureColor;
         ctx.lineWidth = 3;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
-    }, [signatureMode]);
+    }, [signatureMode, signatureColor]);
 
     const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
@@ -152,6 +160,7 @@ export default function SignPDFPage() {
 
     const stopDrawing = () => {
         setIsDrawing(false);
+        setDrawCounter(prev => prev + 1);
     };
 
     const clearCanvas = () => {
@@ -185,7 +194,7 @@ export default function SignPDFPage() {
             canvas.height = 200;
             const ctx = canvas.getContext("2d")!;
             ctx.clearRect(0, 0, canvas.width, canvas.height); // Transparent
-            ctx.fillStyle = "#000";
+            ctx.fillStyle = signatureColor;
             ctx.font = "italic 72px 'Great Vibes', cursive, serif";
             ctx.textBaseline = "middle";
             ctx.textAlign = "center";
@@ -197,9 +206,15 @@ export default function SignPDFPage() {
         return null;
     };
 
+    useEffect(() => {
+        const url = getSignatureDataUrl();
+        setSignaturePreviewUrl(url);
+    }, [signatureMode, signatureText, signatureImage, hasDrawn, signatureColor, drawCounter]);
+
     const [signatureSize, setSignatureSize] = useState({ width: 150, height: 60 });
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
+    const [isRotating, setIsRotating] = useState(false);
     const workspaceRef = useRef<HTMLDivElement>(null);
 
     const handleApplySignature = async () => {
@@ -222,91 +237,115 @@ export default function SignPDFPage() {
             const signatureBytes = Uint8Array.from(atob(signatureData), c => c.charCodeAt(0));
 
             const signatureImageEmbed = await pdf.embedPng(signatureBytes);
-            const page = pdf.getPage(currentPage);
-            const { width: pageWidth, height: pageHeight } = page.getSize();
+            const totalPagesInDoc = pdf.getPageCount();
 
-            // Convert UI percentages to PDF points
-            // UI position is center-based
-            const sigWidth = (signatureSize.width / (workspaceRef.current?.offsetWidth || 1)) * pageWidth;
-            const sigHeight = (signatureSize.height / (workspaceRef.current?.offsetHeight || 1)) * pageHeight;
-            
-            const x = (signaturePosition.x / 100) * pageWidth - (sigWidth / 2);
-            const y = (1 - signaturePosition.y / 100) * pageHeight - (sigHeight / 2);
+            // Determine target pages
+            let targetPageIndices: number[] = [];
+            if (targetPages === "current") {
+                targetPageIndices = [currentPage];
+            } else if (targetPages === "all") {
+                targetPageIndices = Array.from({ length: totalPagesInDoc }, (_, i) => i);
+            } else if (targetPages === "range") {
+                targetPageIndices = pageRange.split(",").flatMap(part => {
+                    if (part.includes("-")) {
+                        const [start, end] = part.split("-").map(n => parseInt(n.trim()) - 1);
+                        return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+                    }
+                    return [parseInt(part.trim()) - 1];
+                }).filter(n => !isNaN(n) && n >= 0 && n < totalPagesInDoc);
+            }
 
-            page.drawImage(signatureImageEmbed, {
-                x: Math.max(0, Math.min(x, pageWidth - sigWidth)),
-                y: Math.max(0, Math.min(y, pageHeight - sigHeight)),
-                width: sigWidth,
-                height: sigHeight,
-            });
+            if (targetPageIndices.length === 0) {
+                throw new Error("No valid pages selected for signing.");
+            }
+
+            // Apply to each page
+            for (const index of targetPageIndices) {
+                const page = pdf.getPage(index);
+                const { width: pageWidth, height: pageHeight } = page.getSize();
+
+                // Convert UI percentages to PDF points
+                const sigWidth = (signatureSize.width / (workspaceRef.current?.offsetWidth || 1)) * pageWidth;
+                const sigHeight = (signatureSize.height / (workspaceRef.current?.offsetHeight || 1)) * pageHeight;
+                
+                const x = (signaturePosition.x / 100) * pageWidth - (sigWidth / 2);
+                const y = (1 - signaturePosition.y / 100) * pageHeight - (sigHeight / 2);
+
+                page.drawImage(signatureImageEmbed, {
+                    x: Math.max(0, Math.min(x, pageWidth - sigWidth)),
+                    y: Math.max(0, Math.min(y, pageHeight - sigHeight)),
+                    width: sigWidth,
+                    height: sigHeight,
+                    opacity: signatureOpacity,
+                    rotate: { type: 'degrees', angle: -signatureRotation } as any, // CCW for pdf-lib degrees
+                });
+            }
 
             const pdfBytes = await pdf.save();
             setResultBlob(uint8ArrayToBlob(pdfBytes));
             setStatus("success");
-            addToHistory("Signed PDF", file.name, `Signature added to page ${currentPage + 1}`);
+            addToHistory("Signed PDF", file.name, `Signature added to ${targetPageIndices.length} page(s)`);
         } catch (error) {
             console.error(error);
-            setErrorMessage("Failed to apply signature. The PDF might be encrypted or read-only.");
+            setErrorMessage(error instanceof Error ? error.message : "Failed to apply signature.");
             setStatus("error");
         }
     };
 
     const handleWorkspaceMouseMove = (e: React.MouseEvent) => {
-        if (!isDragging && !isResizing) return;
+        if (!isDragging && !isResizing && !isRotating) return;
         if (!workspaceRef.current) return;
 
         const rect = workspaceRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const centerX = (signaturePosition.x / 100) * rect.width;
+        const centerY = (signaturePosition.y / 100) * rect.height;
 
         if (isDragging) {
             setSignaturePosition({ 
-                x: Math.max(0, Math.min(100, x)), 
-                y: Math.max(0, Math.min(100, y)) 
+                x: Math.max(0, Math.min(100, (mouseX / rect.width) * 100)), 
+                y: Math.max(0, Math.min(100, (mouseY / rect.height) * 100)) 
             });
         } else if (isResizing) {
-            // Resize based on distance from center
-            const centerX = (signaturePosition.x / 100) * rect.width;
-            const centerY = (signaturePosition.y / 100) * rect.height;
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            
             const newWidth = Math.max(50, Math.abs(mouseX - centerX) * 2);
             const newHeight = Math.max(20, Math.abs(mouseY - centerY) * 2);
-            
             setSignatureSize({ width: newWidth, height: newHeight });
+        } else if (isRotating) {
+            const angle = Math.atan2(mouseY - centerY, mouseX - centerX) * (180 / Math.PI);
+            setSignatureRotation(angle + 90);
         }
     };
 
     const handleWorkspaceMouseUp = () => {
         setIsDragging(false);
         setIsResizing(false);
+        setIsRotating(false);
     };
 
     const handleWorkspaceTouchMove = (e: React.TouchEvent) => {
-        if (!isDragging && !isResizing) return;
+        if (!isDragging && !isResizing && !isRotating) return;
         if (!workspaceRef.current) return;
 
         const rect = workspaceRef.current.getBoundingClientRect();
         const touch = e.touches[0];
-        const x = ((touch.clientX - rect.left) / rect.width) * 100;
-        const y = ((touch.clientY - rect.top) / rect.height) * 100;
+        const touchX = touch.clientX - rect.left;
+        const touchY = touch.clientY - rect.top;
+        const centerX = (signaturePosition.x / 100) * rect.width;
+        const centerY = (signaturePosition.y / 100) * rect.height;
 
         if (isDragging) {
             setSignaturePosition({ 
-                x: Math.max(0, Math.min(100, x)), 
-                y: Math.max(0, Math.min(100, y)) 
+                x: Math.max(0, Math.min(100, (touchX / rect.width) * 100)), 
+                y: Math.max(0, Math.min(100, (touchY / rect.height) * 100)) 
             });
         } else if (isResizing) {
-            const centerX = (signaturePosition.x / 100) * rect.width;
-            const centerY = (signaturePosition.y / 100) * rect.height;
-            const touchX = touch.clientX - rect.left;
-            const touchY = touch.clientY - rect.top;
-            
             const newWidth = Math.max(50, Math.abs(touchX - centerX) * 2);
             const newHeight = Math.max(20, Math.abs(touchY - centerY) * 2);
-            
             setSignatureSize({ width: newWidth, height: newHeight });
+        } else if (isRotating) {
+            const angle = Math.atan2(touchY - centerY, touchX - centerX) * (180 / Math.PI);
+            setSignatureRotation(angle + 90);
         }
     };
 
@@ -523,9 +562,92 @@ export default function SignPDFPage() {
                                     </div>
 
                                     <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-xl">
-                                        <h3 className="text-xl font-bold text-gray-900 mb-8">Active Tools</h3>
+                                        <h3 className="text-xl font-bold text-gray-900 mb-8">Professional Styling</h3>
+                                        <div className="space-y-6">
+                                            {/* Color Selection */}
+                                            <div className="space-y-3">
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Signature Color</label>
+                                                <div className="flex gap-3">
+                                                    {[
+                                                        { label: "Onyx Black", color: "#000000" },
+                                                        { label: "Royal Blue", color: "#003399" },
+                                                        { label: "Deep Red", color: "#990000" },
+                                                    ].map((c) => (
+                                                        <button 
+                                                            key={c.color}
+                                                            onClick={() => setSignatureColor(c.color)}
+                                                            className={`w-10 h-10 rounded-full border-2 transition-all hover:scale-110 active:scale-90 ${signatureColor === c.color ? "border-black ring-4 ring-black/10 scale-110" : "border-transparent"}`}
+                                                            style={{ backgroundColor: c.color }}
+                                                            title={c.label}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Opacity & Rotation */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Opacity</label>
+                                                    <input 
+                                                        type="range" min="10" max="100" value={signatureOpacity * 100}
+                                                        onChange={(e) => setSignatureOpacity(Number(e.target.value) / 100)}
+                                                        className="w-full accent-black h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Rotation</label>
+                                                    <input 
+                                                        type="range" min="-180" max="180" value={signatureRotation}
+                                                        onChange={(e) => setSignatureRotation(Number(e.target.value))}
+                                                        className="w-full accent-black h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-xl">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-8">Target Pages</h3>
+                                        <div className="space-y-4">
+                                            <div className="flex bg-gray-100 p-1 rounded-2xl">
+                                                {[
+                                                    { id: "current", label: "Current" },
+                                                    { id: "all", label: "Apply All" },
+                                                    { id: "range", label: "Range" },
+                                                ].map((t) => (
+                                                    <button 
+                                                        key={t.id}
+                                                        onClick={() => setTargetPages(t.id as any)}
+                                                        className={`flex-1 py-3 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all ${targetPages === t.id ? "bg-white text-black shadow-sm" : "text-gray-500"}`}
+                                                    >
+                                                        {t.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            {targetPages === "range" && (
+                                                <input 
+                                                    type="text"
+                                                    placeholder="e.g. 1-3, 5"
+                                                    value={pageRange}
+                                                    onChange={(e) => setPageRange(e.target.value)}
+                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:border-black transition-all text-sm font-bold"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-xl">
+                                        <div className="flex items-center justify-between mb-8">
+                                            <h3 className="text-xl font-bold text-gray-900">Workspace</h3>
+                                            <button 
+                                                onClick={() => setShowGrid(!showGrid)}
+                                                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${showGrid ? "bg-black text-white" : "bg-gray-100 text-gray-500 hover:text-black"}`}
+                                            >
+                                                {showGrid ? "Grid On" : "Grid Off"}
+                                            </button>
+                                        </div>
                                         <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-                                            Tip: Drag the signature box on the document to move it, and use the handle to resize.
+                                            Signature will be placed at:
                                         </p>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
@@ -583,34 +705,85 @@ export default function SignPDFPage() {
                                                 />
                                             )}
 
+                                            {/* Industrial Grid Overlay */}
+                                            {showGrid && (
+                                                <div className="absolute inset-0 pointer-events-none opacity-10" style={{ 
+                                                    backgroundImage: "radial-gradient(#000 1px, transparent 1px)",
+                                                    backgroundSize: "20px 20px"
+                                                }} />
+                                            )}
+
                                             {/* Live Signature Marker */}
                                             {isSignatureReady() && (
                                                 <motion.div
                                                     layout
                                                     onMouseDown={(e) => { e.stopPropagation(); setIsDragging(true); }}
                                                     onTouchStart={(e) => { e.stopPropagation(); setIsDragging(true); }}
-                                                    className={`absolute border-2 border-dashed border-black/60 cursor-move flex items-center justify-center backdrop-blur-[1px] shadow-2xl overflow-visible ${isDragging ? "bg-white/40 z-50 scale-105" : "bg-white/20"}`}
+                                                    className={`absolute border-2 border-dashed flex items-center justify-center backdrop-blur-[1px] shadow-2xl overflow-visible transition-all duration-75 ${isDragging ? "bg-white/40 z-50 scale-[1.02] cursor-grabbing" : "bg-white/10 cursor-grab hover:bg-white/20"} ${isRotating || isResizing ? "z-50" : ""}`}
                                                     style={{
                                                         width: `${signatureSize.width}px`,
                                                         height: `${signatureSize.height}px`,
                                                         left: `${signaturePosition.x}%`,
                                                         top: `${signaturePosition.y}%`,
-                                                        transform: "translate(-50%, -50%)",
+                                                        transform: `translate(-50%, -50%) rotate(${signatureRotation}deg)`,
+                                                        borderColor: signatureColor,
+                                                        opacity: signatureOpacity
                                                     }}
                                                 >
                                                     <div className="relative w-full h-full flex items-center justify-center p-2">
-                                                        <div className="text-[8px] font-bold text-black/60 uppercase tracking-widest bg-white/80 px-2 py-1 rounded-full shadow-sm pointer-events-none">
-                                                            {isDragging ? "Moving..." : "Signature"}
+                                                        {/* Rotation Handle */}
+                                                        <div 
+                                                            className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 group/rotate"
+                                                            onMouseDown={(e) => { e.stopPropagation(); setIsRotating(true); }}
+                                                            onTouchStart={(e) => { e.stopPropagation(); setIsRotating(true); }}
+                                                        >
+                                                            <div className="w-6 h-6 rounded-full shadow-lg flex items-center justify-center cursor-alias transition-transform group-hover/rotate:scale-125" style={{ backgroundColor: signatureColor }}>
+                                                                <Rotate className="w-3 h-3 text-white" />
+                                                            </div>
+                                                            <div className="w-0.5 h-6 opacity-40" style={{ backgroundColor: signatureColor }} />
+                                                        </div>
+
+                                                        <div 
+                                                            className="absolute inset-0 flex items-center justify-center p-2 overflow-hidden pointer-events-none"
+                                                        >
+                                                            {signaturePreviewUrl ? (
+                                                                <img 
+                                                                    src={signaturePreviewUrl} 
+                                                                    alt="Preview" 
+                                                                    className="max-w-full max-h-full object-contain pointer-events-none"
+                                                                />
+                                                            ) : (
+                                                                <div 
+                                                                    className="text-[8px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg pointer-events-none select-none transition-transform active:scale-95"
+                                                                    style={{ backgroundColor: signatureColor, color: "#fff" }}
+                                                                >
+                                                                    {isDragging ? "Moving..." : isRotating ? "Rotating..." : isResizing ? "Scaling..." : "Signature"}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         
-                                                        {/* Resize Handle */}
-                                                        <div 
-                                                            onMouseDown={(e) => { e.stopPropagation(); setIsResizing(true); }}
-                                                            onTouchStart={(e) => { e.stopPropagation(); setIsResizing(true); }}
-                                                            className="absolute -right-2 -bottom-2 w-4 h-4 bg-black rounded-full cursor-nwse-resize shadow-lg flex items-center justify-center group z-[60]"
-                                                        >
-                                                            <RefreshCw className="w-2 h-2 text-white group-hover:rotate-180 transition-transform" />
-                                                        </div>
+                                                        {/* Corner Resize Handles */}
+                                                        {[
+                                                            { pos: "-top-1.5 -left-1.5", cursor: "nw-resize" },
+                                                            { pos: "-top-1.5 -right-1.5", cursor: "ne-resize" },
+                                                            { pos: "-bottom-1.5 -left-1.5", cursor: "sw-resize" },
+                                                            { pos: "-bottom-1.5 -right-1.5", cursor: "se-resize" },
+                                                        ].map((handle, i) => (
+                                                            <div 
+                                                                key={i}
+                                                                onMouseDown={(e) => { e.stopPropagation(); setIsResizing(true); }}
+                                                                onTouchStart={(e) => { e.stopPropagation(); setIsResizing(true); }}
+                                                                className={`absolute ${handle.pos} w-3 h-3 rounded-full border border-white shadow-md transition-transform hover:scale-150 z-50`}
+                                                                style={{ backgroundColor: signatureColor, cursor: handle.cursor }}
+                                                            />
+                                                        ))}
+
+                                                        {/* Center Label during transform */}
+                                                        {(isResizing || isRotating) && (
+                                                            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[8px] px-2 py-1 rounded whitespace-nowrap backdrop-blur-sm">
+                                                                {isResizing ? `${Math.round(signatureSize.width)}x${Math.round(signatureSize.height)}px` : `${Math.round(signatureRotation)}°`}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </motion.div>
                                             )}
