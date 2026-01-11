@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
     Upload, File, X, Download, CheckCircle2, RefreshCw, 
     AlertCircle, FileSignature, Pencil, Type, Image as ImageIcon, 
-    ArrowRight, ChevronLeft, ChevronRight, Trash2, Maximize2
+    ArrowRight, ChevronLeft, ChevronRight, Trash2
 } from "lucide-react";
 import Image from "next/image";
 import { PDFDocument } from "pdf-lib";
@@ -109,8 +109,7 @@ export default function SignPDFPage() {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Transparent background
         ctx.strokeStyle = "#000";
         ctx.lineWidth = 3;
         ctx.lineCap = "round";
@@ -162,8 +161,7 @@ export default function SignPDFPage() {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         setHasDrawn(false);
     };
 
@@ -183,21 +181,26 @@ export default function SignPDFPage() {
             return canvasRef.current?.toDataURL("image/png") || null;
         } else if (signatureMode === "type" && signatureText) {
             const canvas = document.createElement("canvas");
-            canvas.width = 400;
-            canvas.height = 100;
+            canvas.width = 600;
+            canvas.height = 200;
             const ctx = canvas.getContext("2d")!;
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Transparent
             ctx.fillStyle = "#000";
-            ctx.font = "italic 48px serif";
+            ctx.font = "italic 72px 'Great Vibes', cursive, serif";
             ctx.textBaseline = "middle";
-            ctx.fillText(signatureText, 20, 50);
+            ctx.textAlign = "center";
+            ctx.fillText(signatureText, canvas.width / 2, canvas.height / 2);
             return canvas.toDataURL("image/png");
         } else if (signatureMode === "upload" && signatureImage) {
             return signatureImage;
         }
         return null;
     };
+
+    const [signatureSize, setSignatureSize] = useState({ width: 150, height: 60 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const workspaceRef = useRef<HTMLDivElement>(null);
 
     const handleApplySignature = async () => {
         if (!file) return;
@@ -220,14 +223,19 @@ export default function SignPDFPage() {
 
             const signatureImageEmbed = await pdf.embedPng(signatureBytes);
             const page = pdf.getPage(currentPage);
-            const { width, height } = page.getSize();
+            const { width: pageWidth, height: pageHeight } = page.getSize();
 
-            const sigWidth = 150;
-            const sigHeight = (signatureImageEmbed.height / signatureImageEmbed.width) * sigWidth;
+            // Convert UI percentages to PDF points
+            // UI position is center-based
+            const sigWidth = (signatureSize.width / (workspaceRef.current?.offsetWidth || 1)) * pageWidth;
+            const sigHeight = (signatureSize.height / (workspaceRef.current?.offsetHeight || 1)) * pageHeight;
+            
+            const x = (signaturePosition.x / 100) * pageWidth - (sigWidth / 2);
+            const y = (1 - signaturePosition.y / 100) * pageHeight - (sigHeight / 2);
 
             page.drawImage(signatureImageEmbed, {
-                x: (signaturePosition.x / 100) * (width - sigWidth),
-                y: height - (signaturePosition.y / 100) * (height - sigHeight) - sigHeight,
+                x: Math.max(0, Math.min(x, pageWidth - sigWidth)),
+                y: Math.max(0, Math.min(y, pageHeight - sigHeight)),
                 width: sigWidth,
                 height: sigHeight,
             });
@@ -240,6 +248,65 @@ export default function SignPDFPage() {
             console.error(error);
             setErrorMessage("Failed to apply signature. The PDF might be encrypted or read-only.");
             setStatus("error");
+        }
+    };
+
+    const handleWorkspaceMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging && !isResizing) return;
+        if (!workspaceRef.current) return;
+
+        const rect = workspaceRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        if (isDragging) {
+            setSignaturePosition({ 
+                x: Math.max(0, Math.min(100, x)), 
+                y: Math.max(0, Math.min(100, y)) 
+            });
+        } else if (isResizing) {
+            // Resize based on distance from center
+            const centerX = (signaturePosition.x / 100) * rect.width;
+            const centerY = (signaturePosition.y / 100) * rect.height;
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const newWidth = Math.max(50, Math.abs(mouseX - centerX) * 2);
+            const newHeight = Math.max(20, Math.abs(mouseY - centerY) * 2);
+            
+            setSignatureSize({ width: newWidth, height: newHeight });
+        }
+    };
+
+    const handleWorkspaceMouseUp = () => {
+        setIsDragging(false);
+        setIsResizing(false);
+    };
+
+    const handleWorkspaceTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging && !isResizing) return;
+        if (!workspaceRef.current) return;
+
+        const rect = workspaceRef.current.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = ((touch.clientX - rect.left) / rect.width) * 100;
+        const y = ((touch.clientY - rect.top) / rect.height) * 100;
+
+        if (isDragging) {
+            setSignaturePosition({ 
+                x: Math.max(0, Math.min(100, x)), 
+                y: Math.max(0, Math.min(100, y)) 
+            });
+        } else if (isResizing) {
+            const centerX = (signaturePosition.x / 100) * rect.width;
+            const centerY = (signaturePosition.y / 100) * rect.height;
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+            
+            const newWidth = Math.max(50, Math.abs(touchX - centerX) * 2);
+            const newHeight = Math.max(20, Math.abs(touchY - centerY) * 2);
+            
+            setSignatureSize({ width: newWidth, height: newHeight });
         }
     };
 
@@ -456,27 +523,18 @@ export default function SignPDFPage() {
                                     </div>
 
                                     <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-xl">
-                                        <h3 className="text-xl font-bold text-gray-900 mb-8">Positioning</h3>
-                                        <div className="space-y-6">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Horizontal Location</label>
-                                                <input 
-                                                    type="range"
-                                                    min="5" max="95"
-                                                    value={signaturePosition.x}
-                                                    onChange={(e) => setSignaturePosition(p => ({ ...p, x: Number(e.target.value) }))}
-                                                    className="w-full accent-black h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
-                                                />
+                                        <h3 className="text-xl font-bold text-gray-900 mb-8">Active Tools</h3>
+                                        <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                                            Tip: Drag the signature box on the document to move it, and use the handle to resize.
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">X-Pos</p>
+                                                <p className="font-bold">{Math.round(signaturePosition.x)}%</p>
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Vertical Location</label>
-                                                <input 
-                                                    type="range"
-                                                    min="5" max="95"
-                                                    value={signaturePosition.y}
-                                                    onChange={(e) => setSignaturePosition(p => ({ ...p, y: Number(e.target.value) }))}
-                                                    className="w-full accent-black h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
-                                                />
+                                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Y-Pos</p>
+                                                <p className="font-bold">{Math.round(signaturePosition.y)}%</p>
                                             </div>
                                         </div>
                                     </div>
@@ -506,13 +564,21 @@ export default function SignPDFPage() {
                                             </div>
                                         </div>
                                         
-                                        <div className="relative aspect-3/4 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-inner group">
+                                        <div 
+                                            ref={workspaceRef}
+                                            onMouseMove={handleWorkspaceMouseMove}
+                                            onMouseUp={handleWorkspaceMouseUp}
+                                            onMouseLeave={handleWorkspaceMouseUp}
+                                            onTouchMove={handleWorkspaceTouchMove}
+                                            onTouchEnd={handleWorkspaceMouseUp}
+                                            className="relative aspect-3/4 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-inner group select-none"
+                                        >
                                             {pageImages[currentPage] && (
                                                 <Image
                                                     src={pageImages[currentPage]}
                                                     alt={`Page ${currentPage + 1}`}
                                                     fill
-                                                    className="object-contain"
+                                                    className="object-contain pointer-events-none"
                                                     unoptimized
                                                 />
                                             )}
@@ -521,25 +587,33 @@ export default function SignPDFPage() {
                                             {isSignatureReady() && (
                                                 <motion.div
                                                     layout
-                                                    className="absolute w-[150px] aspect-video border-2 border-dashed border-black/40 bg-white/40 flex items-center justify-center p-2 backdrop-blur-[1px] shadow-2xl"
+                                                    onMouseDown={(e) => { e.stopPropagation(); setIsDragging(true); }}
+                                                    onTouchStart={(e) => { e.stopPropagation(); setIsDragging(true); }}
+                                                    className={`absolute border-2 border-dashed border-black/60 cursor-move flex items-center justify-center backdrop-blur-[1px] shadow-2xl overflow-visible ${isDragging ? "bg-white/40 z-50 scale-105" : "bg-white/20"}`}
                                                     style={{
+                                                        width: `${signatureSize.width}px`,
+                                                        height: `${signatureSize.height}px`,
                                                         left: `${signaturePosition.x}%`,
                                                         top: `${signaturePosition.y}%`,
                                                         transform: "translate(-50%, -50%)",
                                                     }}
                                                 >
-                                                    <div className="text-[8px] font-bold text-black/60 uppercase tracking-widest bg-white/80 px-2 py-1 rounded-full shadow-sm">
-                                                        Place Signature
+                                                    <div className="relative w-full h-full flex items-center justify-center p-2">
+                                                        <div className="text-[8px] font-bold text-black/60 uppercase tracking-widest bg-white/80 px-2 py-1 rounded-full shadow-sm pointer-events-none">
+                                                            {isDragging ? "Moving..." : "Signature"}
+                                                        </div>
+                                                        
+                                                        {/* Resize Handle */}
+                                                        <div 
+                                                            onMouseDown={(e) => { e.stopPropagation(); setIsResizing(true); }}
+                                                            onTouchStart={(e) => { e.stopPropagation(); setIsResizing(true); }}
+                                                            className="absolute -right-2 -bottom-2 w-4 h-4 bg-black rounded-full cursor-nwse-resize shadow-lg flex items-center justify-center group z-[60]"
+                                                        >
+                                                            <RefreshCw className="w-2 h-2 text-white group-hover:rotate-180 transition-transform" />
+                                                        </div>
                                                     </div>
                                                 </motion.div>
                                             )}
-                                            
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex flex-col items-center justify-center gap-2 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 pointer-events-none">
-                                                <div className="bg-white/20 backdrop-blur-md border border-white/30 p-3 rounded-full shadow-2xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                                                    <Maximize2 className="w-6 h-6 text-white" />
-                                                </div>
-                                                <span className="text-[10px] font-bold text-white uppercase tracking-wider">Workspace View</span>
-                                            </div>
                                         </div>
                                     </div>
 
