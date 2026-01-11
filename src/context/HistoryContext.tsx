@@ -30,16 +30,25 @@ export function HistoryProvider({ children }: { children: ReactNode }) {
             const storedHistory = localStorage.getItem(`simplypdf_history_${user.email}`);
             if (storedHistory) {
                 try {
-                    setHistory(JSON.parse(storedHistory));
+                    const parsed = JSON.parse(storedHistory);
+                    setTimeout(() => {
+                        setHistory(parsed);
+                    }, 0);
                 } catch (e) {
                     console.error("Failed to parse history", e);
-                    setHistory([]);
+                    setTimeout(() => {
+                        setHistory([]);
+                    }, 0);
                 }
             } else {
-                setHistory([]);
+                setTimeout(() => {
+                    setHistory([]);
+                }, 0);
             }
         } else {
-            setHistory([]); // Clear view if logged out
+            setTimeout(() => {
+                setHistory([]); // Clear view if logged out
+            }, 0);
         }
     }, [user]);
 
