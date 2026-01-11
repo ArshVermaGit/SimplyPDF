@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Mail, MessageSquare, Clock, Send, ArrowLeft, Github, Linkedin, Twitter, MapPin } from "lucide-react";
+import { Mail, MessageSquare, Clock, Send, ArrowLeft, Github, Linkedin, Twitter } from "lucide-react";
 import { useState } from "react";
 
 const contactMethods = [
@@ -278,7 +278,7 @@ export default function ContactPage() {
                     <div className="grid md:grid-cols-3 gap-6">
                         {faqs.map((faq, index) => (
                             <motion.div
-                                key={index}
+                                key={faq.q}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.55 + index * 0.05 }}
