@@ -4,10 +4,11 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, Image, Eye } from "lucide-react";
-import { downloadAsZip, formatFileSize } from "@/lib/pdf-utils";
+import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, Image as ImageIcon, Eye } from "lucide-react";
+import { } from "@/lib/pdf-utils";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import JSZip from "jszip";
+import Image from "next/image";
 import {
     AnimatedBackground,
     FloatingDecorations,
@@ -74,7 +75,7 @@ export default function PDFToJPGPage() {
                 const context = canvas.getContext("2d")!;
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                await page.render({ canvasContext: context, viewport } as any).promise;
+                await page.render({ canvasContext: context, viewport }).promise;
 
                 convertedImages.push({
                     name: `page-${i}.jpg`,
@@ -145,7 +146,7 @@ export default function PDFToJPGPage() {
                             <ToolHeader
                                 title="PDF to JPG"
                                 description="Convert PDF pages to high-quality JPG images instantly."
-                                icon={Image}
+                                icon={ImageIcon}
                             />
 
                             <ToolCard className="p-8">
@@ -209,11 +210,13 @@ export default function PDFToJPGPage() {
                                             className="relative overflow-hidden rounded-2xl border-2 border-gray-100 hover:border-black shadow-sm hover:shadow-xl transition-all duration-300"
                                             onClick={() => { setPreviewPage(index); setPreviewOpen(true); }}
                                         >
-                                            <div className="aspect-[3/4] bg-white p-2">
-                                                <img
+                                            <div className="aspect-[3/4] bg-white p-2 relative">
+                                                <Image
                                                     src={image.dataUrl}
                                                     alt={`Page ${index + 1}`}
+                                                    fill
                                                     className="w-full h-full object-contain"
+                                                    unoptimized
                                                 />
                                             </div>
 
