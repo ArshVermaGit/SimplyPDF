@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Eye, Trash2, GripVertical, Check } from "lucide-react";
+import Image from "next/image";
 
 interface PDFPageThumbnailProps {
     image: string;
@@ -57,11 +58,13 @@ export function PDFPageThumbnail({
                 )}
 
                 {/* Page Image */}
-                <div className="aspect-[3/4] bg-white">
-                    <img
+                <div className="aspect-3/4 bg-white relative">
+                    <Image
                         src={image}
                         alt={`Page ${pageNumber}`}
-                        className="w-full h-full object-contain"
+                        fill
+                        className="object-contain"
+                        unoptimized
                     />
                 </div>
 
