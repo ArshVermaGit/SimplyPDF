@@ -4,7 +4,8 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, X, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, Scissors, Eye, Check, ArrowRight, LayoutGrid } from "lucide-react";
+import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, Scissors, Maximize2, Check, LayoutGrid } from "lucide-react";
+import Image from "next/image";
 import { splitPDF, downloadAsZip, formatFileSize } from "@/lib/pdf-utils";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import {
@@ -96,7 +97,7 @@ export default function SplitPDFPage() {
                 const context = canvas.getContext("2d")!;
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                await page.render({ canvasContext: context, viewport } as any).promise;
+                await page.render({ canvasContext: context, viewport }).promise;
 
                 pageInfos.push({
                     pageNumber: i,
@@ -104,15 +105,16 @@ export default function SplitPDFPage() {
                     selected: true,
                 });
 
-                (page as any).cleanup?.();
+                (page as { cleanup?: () => void }).cleanup?.();
             }
 
             setPages(pageInfos);
             setStatus("ready");
             await pdfDoc.destroy();
-        } catch (error: any) {
-            console.error("PDF loading error:", error);
-            setErrorMessage(`Failed to load PDF pages: ${error.message || "Unknown error"}`);
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("PDF loading error:", err);
+            setErrorMessage(`Failed to load PDF pages: ${err.message || "Unknown error"}`);
             setStatus("error");
         }
     };
@@ -405,7 +407,13 @@ export default function SplitPDFPage() {
                                                                         }`}
                                                                     onClick={(e) => handlePageClick(page.pageNumber, e.shiftKey)}
                                                                 >
-                                                                    <img src={page.image} alt={`Page ${page.pageNumber}`} className="w-full h-full object-cover" />
+                                                                    <Image
+                                                                        src={page.image}
+                                                                        alt={`Page ${page.pageNumber}`}
+                                                                        fill
+                                                                        className="object-cover"
+                                                                        unoptimized
+                                                                    />
 
                                                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
 
@@ -423,14 +431,15 @@ export default function SplitPDFPage() {
                                                                     </div>
 
                                                                     {/* Zoom Action */}
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); setPreviewPage(index); setPreviewOpen(true); }}
-                                                                        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                                                                    >
-                                                                        <div className="w-8 h-8 bg-white/90 backdrop-blur shadow-lg rounded-full flex items-center justify-center pointer-events-auto hover:bg-white transition-transform transform hover:scale-110">
-                                                                            <Eye className="w-4 h-4 text-gray-900" />
-                                                                        </div>
-                                                                    </button>
+                                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex flex-col items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); setPreviewPage(index); setPreviewOpen(true); }}
+                                                                            className="w-10 h-10 bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full flex items-center justify-center transform scale-75 group-hover:scale-100 transition-all duration-300 hover:bg-white hover:text-black"
+                                                                        >
+                                                                            <Maximize2 className="w-5 h-5" />
+                                                                        </button>
+                                                                        <span className="text-[8px] font-bold text-white uppercase tracking-tighter">View</span>
+                                                                    </div>
                                                                 </motion.div>
 
                                                                 {/* Manual Cut Indicator */}
@@ -760,7 +769,8 @@ export default function SplitPDFPage() {
                 images={pages.map(p => p.image)}
                 currentPage={previewPage}
                 onPageChange={setPreviewPage}
-                title={file?.name || "PDF Preview"}
+                onDownload={handleSplit}
+                title="Split PDF Preview"
             />
         </div >
     );
