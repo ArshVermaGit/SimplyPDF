@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, Type, Pencil, ArrowRight, ChevronLeft, ChevronRight, Trash2, Square, Circle, Image as ImageIcon, MousePointer2, Settings, Plus, Minus, Move } from "lucide-react";
+import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, Type, Pencil, ChevronLeft, ChevronRight, Trash2, Square, Circle, Image as ImageIcon, MousePointer2, Settings, Plus, Minus, Move } from "lucide-react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 import {
@@ -15,6 +15,7 @@ import {
     ProcessingState
 } from "@/components/ToolPageElements";
 import { useHistory } from "@/context/HistoryContext";
+import Image from "next/image";
 
 type Tool = "text" | "draw" | "rectangle" | "circle" | "image" | "select";
 
@@ -102,7 +103,7 @@ export default function EditPDFPage() {
                 const context = canvas.getContext("2d")!;
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                await page.render({ canvasContext: context, viewport } as any).promise;
+                await page.render({ canvasContext: context, viewport }).promise;
                 images.push(canvas.toDataURL("image/jpeg", 0.7));
                 dimensions.push({ width: viewport.width, height: viewport.height });
             }
@@ -266,7 +267,7 @@ export default function EditPDFPage() {
         if (selectedAnnotationId === id) setSelectedAnnotationId(null);
     };
 
-    const updateAnnotationProperty = (id: string, property: keyof Annotation, value: any) => {
+    const updateAnnotationProperty = <K extends keyof Annotation>(id: string, property: K, value: Annotation[K]) => {
         setAnnotations(prev => prev.map(a => a.id === id ? { ...a, [property]: value } : a));
     };
 
@@ -526,7 +527,7 @@ export default function EditPDFPage() {
                                         <ChevronRight className="w-4 h-4" />
                                     </button>
                                 </div>
-                                <div className="w-[1px] h-4 bg-gray-200" />
+                                <div className="w-px h-4 bg-gray-200" />
                                 <button
                                     onClick={handleApplyEdits}
                                     className="px-4 py-1.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors flex items-center gap-2"
@@ -550,10 +551,13 @@ export default function EditPDFPage() {
                                 onMouseUp={handleMouseUp}
                                 onClick={handleCanvasClick}
                             >
-                                <img
+                                <Image
                                     src={pageImages[currentPage]}
                                     alt={`Page ${currentPage + 1}`}
+                                    width={pageDimensions[currentPage]?.width || 0}
+                                    height={pageDimensions[currentPage]?.height || 0}
                                     className="absolute inset-0 w-full h-full pointer-events-none select-none"
+                                    unoptimized
                                 />
 
                                 {/* Render All Page Annotations */}
@@ -596,7 +600,13 @@ export default function EditPDFPage() {
                                             />
                                         )}
                                         {anno.type === "image" && anno.content && (
-                                            <img src={anno.content} alt="" className="w-full h-full" />
+                                            <Image 
+                                                src={anno.content} 
+                                                alt="" 
+                                                fill
+                                                className="w-full h-full"
+                                                unoptimized
+                                            />
                                         )}
                                         {anno.type === "draw" && anno.path && (
                                             <svg
