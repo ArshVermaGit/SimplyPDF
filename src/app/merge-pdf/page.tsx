@@ -4,11 +4,12 @@ export const dynamic = "force-dynamic";
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { Upload, File, X, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, GripVertical, Trash2, Plus, Eye, RotateCw, Combine, Undo, Redo, ArrowUpAZ, ArrowDownZA, ArrowUpDown } from "lucide-react";
+import { Upload, File, X, Download, CheckCircle2, RefreshCw, AlertCircle, GripVertical, Trash2, Plus, Eye, RotateCw, Combine, Undo, Redo, ArrowUpAZ, ArrowDownZA, ArrowUpDown } from "lucide-react";
 import { PDFDocument, degrees } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import { useHistory } from "@/context/HistoryContext";
+import Image from "next/image";
 import {
     AnimatedBackground,
     FloatingDecorations,
@@ -153,7 +154,7 @@ export default function MergePDFPage() {
                     await page.render({
                         canvasContext: context,
                         viewport: viewport,
-                    } as any).promise;
+                    }).promise;
 
                     filePages.push({
                         id: `${fileId}-page-${i}`,
@@ -165,7 +166,7 @@ export default function MergePDFPage() {
                         originalArrayBuffer: originalBuffer,
                     });
 
-                    (page as any).cleanup?.();
+                    (page as { cleanup?: () => void }).cleanup?.();
                 }
 
                 loadedFiles.push({
@@ -181,22 +182,19 @@ export default function MergePDFPage() {
 
             if (isFirstLoad) {
                 pushToUndoRedo(loadedFiles);
-                setFiles(loadedFiles);
+                if (loadedFiles.length > 0) {
+                    const firstFileName = loadedFiles[0].name.replace('.pdf', '');
+                    setCustomFileName(`${firstFileName}_merged.pdf`);
+                }
             } else {
                 const combinedFiles = [...files, ...loadedFiles];
-                // Check for duplicates in the new batch against existing
-                const hasDuplicates = loadedFiles.some(nf => files.some(ef => ef.name === nf.name && ef.size === nf.size));
-                if (hasDuplicates) {
-                    // We could show a toast here, for now just log or set a transient message
-                    console.warn("Duplicate files detected");
-                }
                 pushToUndoRedo(combinedFiles);
-                setFiles(combinedFiles);
             }
             setStatus("ready");
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
-            setErrorMessage(`Error loading PDFs: ${error.message || "Unknown error"}`);
+            const message = error instanceof Error ? error.message : "Unknown error";
+            setErrorMessage(`Error loading PDFs: ${message}`);
             setStatus("error");
         }
     };
@@ -301,7 +299,7 @@ export default function MergePDFPage() {
             mergedPdf.setCreator("SimplyPDF");
 
             // Cache loaded source PDFs to avoid reloading the same file multiple times
-            const loadedPdfs = new Map<string, any>();
+            const loadedPdfs = new Map<string, PDFDocument>();
 
             for (const fileInfo of files) {
                 for (const pageInfo of fileInfo.pages) {
@@ -466,7 +464,7 @@ export default function MergePDFPage() {
                                                     <Undo className="w-4 h-4" />
                                                 </button>
                                                 <div className="w-px h-4 bg-gray-200 mx-1" />
-                                                <button onClick={redo} disabled={historyIndex === -1 || historyIndex >= history.length - 1} className="p-1.5 hover:bg-gray-100 rounded-md disabled:opacity-30 transition-colors" title="Redo">
+                                                <button onClick={redo} disabled={historyIndex >= undoRedoHistory.length - 1} className="p-1.5 hover:bg-gray-100 rounded-md disabled:opacity-30 transition-colors" title="Redo">
                                                     <Redo className="w-4 h-4" />
                                                 </button>
                                             </div>
@@ -584,12 +582,14 @@ export default function MergePDFPage() {
                                                                             value={page}
                                                                             className={`relative group cursor-grab active:cursor-grabbing transition-opacity duration-300 ${page.isHidden ? "opacity-20 grayscale pointer-events-none" : "opacity-100"}`}
                                                                         >
-                                                                            <div className="aspect-[3/4] bg-gray-50 rounded-lg border border-gray-100 overflow-hidden relative">
-                                                                                <img
+                                                                            <div className="aspect-3/4 bg-gray-50 rounded-lg border border-gray-100 overflow-hidden relative">
+                                                                                <Image
                                                                                     src={page.image}
                                                                                     alt={`Page ${page.pageNumber}`}
+                                                                                    fill
                                                                                     className="w-full h-full object-contain"
                                                                                     style={{ transform: `rotate(${page.rotation}deg)` }}
+                                                                                    unoptimized
                                                                                 />
                                                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                                                                     <button
@@ -825,7 +825,8 @@ export default function MergePDFPage() {
                 images={previewImages}
                 currentPage={previewPage}
                 onPageChange={setPreviewPage}
-                title="PDF Preview"
+                onDownload={handleMerge}
+                title="Merge PDF Preview"
             />
         </div>
     );
