@@ -8,7 +8,7 @@ import {
   Split,
   Minimize2,
   RotateCw,
-  Image,
+  Image as ImageIcon,
   FileImage,
   Unlock,
   Lock,
@@ -33,7 +33,7 @@ const tools = [
   { title: "Split PDF", description: "Separate pages into files", icon: Split, href: "/split-pdf", featured: true },
   { title: "Compress PDF", description: "Reduce file size instantly", icon: Minimize2, href: "/compress-pdf" },
   { title: "Rotate PDF", description: "Rotate pages any direction", icon: RotateCw, href: "/rotate-pdf" },
-  { title: "JPG to PDF", description: "Convert images to PDF", icon: Image, href: "/jpg-to-pdf", featured: true },
+  { title: "JPG to PDF", description: "Convert images to PDF", icon: ImageIcon, href: "/jpg-to-pdf", featured: true },
   { title: "PDF to JPG", description: "Extract images from PDF", icon: FileImage, href: "/pdf-to-jpg" },
   { title: "Unlock PDF", description: "Remove PDF passwords", icon: Unlock, href: "/unlock-pdf" },
   { title: "Protect PDF", description: "Secure with password", icon: Lock, href: "/protect-pdf" },
@@ -131,7 +131,7 @@ export default function Home() {
           className="absolute bottom-40 left-[20%] hidden lg:block"
         >
           <div className="w-14 h-14 bg-gray-100 rounded-xl shadow-lg flex items-center justify-center animate-float">
-            <Image className="w-7 h-7" />
+            <ImageIcon className="w-7 h-7" />
           </div>
         </motion.div>
 
