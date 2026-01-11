@@ -4,8 +4,9 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, RotateCw, Eye, Check } from "lucide-react";
-import { rotatePDF, formatFileSize, uint8ArrayToBlob } from "@/lib/pdf-utils";
+import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, RotateCw, Eye } from "lucide-react";
+import Image from "next/image";
+import { rotatePDF, uint8ArrayToBlob } from "@/lib/pdf-utils";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import {
     AnimatedBackground,
@@ -32,7 +33,6 @@ export default function RotatePDFPage() {
     const [dragActive, setDragActive] = useState(false);
     const [pages, setPages] = useState<PageInfo[]>([]);
     const [globalRotation, setGlobalRotation] = useState<90 | 180 | 270>(90);
-    const [rotateMode, setRotateMode] = useState<"all" | "selected">("all");
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewPage, setPreviewPage] = useState(0);
 
@@ -82,7 +82,7 @@ export default function RotatePDFPage() {
                 const context = canvas.getContext("2d")!;
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                await page.render({ canvasContext: context, viewport } as any).promise;
+                await page.render({ canvasContext: context, viewport }).promise;
 
                 pageInfos.push({
                     pageNumber: i,
@@ -91,23 +91,18 @@ export default function RotatePDFPage() {
                     selected: true,
                 });
 
-                (page as any).cleanup?.();
+                (page as { cleanup?: () => void }).cleanup?.();
             }
 
             setPages(pageInfos);
             setStatus("ready");
             await pdfDoc.destroy();
-        } catch (error: any) {
-            console.error("PDF loading error:", error);
-            setErrorMessage(`Failed to load PDF pages: ${error.message || "Unknown error"}`);
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("PDF loading error:", err);
+            setErrorMessage(`Failed to load PDF pages: ${err.message || "Unknown error"}`);
             setStatus("error");
         }
-    };
-
-    const togglePage = (pageNumber: number) => {
-        setPages(pages.map(p =>
-            p.pageNumber === pageNumber ? { ...p, selected: !p.selected } : p
-        ));
     };
 
     const handleRotate = async () => {
@@ -262,20 +257,23 @@ export default function RotatePDFPage() {
                                         >
                                             <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-black transition-all">
                                                 <div
-                                                    className="aspect-[3/4] bg-white transition-transform duration-500"
+                                                    className="aspect-3/4 bg-white transition-transform duration-500 relative"
                                                     style={{ transform: `rotate(${globalRotation}deg)` }}
                                                 >
-                                                    <img
+                                                    <Image
                                                         src={page.image}
                                                         alt={`Page ${page.pageNumber}`}
-                                                        className="w-full h-full object-contain"
+                                                        fill
+                                                        className="object-contain"
+                                                        unoptimized
                                                     />
                                                 </div>
 
-                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex flex-col items-center justify-center gap-2 backdrop-blur-[2px] opacity-0 group-hover:opacity-100">
+                                                    <div className="bg-white/20 backdrop-blur-md border border-white/30 p-2.5 rounded-full shadow-2xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
                                                         <Eye className="w-5 h-5 text-white" />
                                                     </div>
+                                                    <span className="text-[10px] font-bold text-white uppercase tracking-wider">Preview</span>
                                                 </div>
 
                                                 <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black text-white text-xs font-bold rounded">
@@ -359,7 +357,9 @@ export default function RotatePDFPage() {
                 images={pages.map(p => p.image)}
                 currentPage={previewPage}
                 onPageChange={setPreviewPage}
-                title={file?.name || "PDF Preview"}
+                rotation={globalRotation}
+                onDownload={handleRotate}
+                title="Rotate PDF Preview"
             />
         </div>
     );
