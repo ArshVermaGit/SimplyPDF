@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, GripVertical, Trash2, Layers, Eye, Check } from "lucide-react";
+import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, GripVertical, Trash2, Layers, Eye, Check, Undo, Redo } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
@@ -35,6 +35,35 @@ export default function OrganizePDFPage() {
     const [dragActive, setDragActive] = useState(false);
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewPage, setPreviewPage] = useState(0);
+    const [customFileName, setCustomFileName] = useState("organized.pdf");
+
+    // History for Undo/Redo
+    const [undoRedoHistory, setUndoRedoHistory] = useState<PageInfo[][]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
+
+    const pushToUndoRedo = (newPages: PageInfo[]) => {
+        const newHistory = undoRedoHistory.slice(0, historyIndex + 1);
+        newHistory.push([...newPages]);
+        if (newHistory.length > 20) newHistory.shift();
+        setUndoRedoHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+    };
+
+    const undo = () => {
+        if (historyIndex > 0) {
+            const newIndex = historyIndex - 1;
+            setHistoryIndex(newIndex);
+            setPages(undoRedoHistory[newIndex]);
+        }
+    };
+
+    const redo = () => {
+        if (historyIndex < undoRedoHistory.length - 1) {
+            const newIndex = historyIndex + 1;
+            setHistoryIndex(newIndex);
+            setPages(undoRedoHistory[newIndex]);
+        }
+    };
 
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
@@ -94,6 +123,8 @@ export default function OrganizePDFPage() {
             }
 
             setPages(pageInfos);
+            setCustomFileName(`${pdfFile.name.replace('.pdf', '')}_organized.pdf`);
+            pushToUndoRedo(pageInfos);
             setStatus("ready");
             await pdfDoc.destroy();
         } catch (error) {
@@ -105,13 +136,17 @@ export default function OrganizePDFPage() {
     };
 
     const togglePage = (id: string) => {
-        setPages(pages.map(p =>
+        const newPages = pages.map(p =>
             p.id === id ? { ...p, selected: !p.selected } : p
-        ));
+        );
+        setPages(newPages);
+        pushToUndoRedo(newPages);
     };
 
     const removePage = (id: string) => {
-        setPages(pages.filter(p => p.id !== id));
+        const newPages = pages.filter(p => p.id !== id);
+        setPages(newPages);
+        pushToUndoRedo(newPages);
     };
 
     const openPreview = (index: number) => {
@@ -160,7 +195,7 @@ export default function OrganizePDFPage() {
         const url = URL.createObjectURL(resultBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "organized.pdf";
+        link.download = customFileName;
         link.click();
         URL.revokeObjectURL(url);
     };
@@ -233,24 +268,39 @@ export default function OrganizePDFPage() {
                             className="max-w-6xl mx-auto"
                         >
                             {/* Header */}
-                            <div className="flex items-center justify-between mb-8">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 bg-white/50 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-sm">
                                 <div className="flex items-center gap-4">
-                                    <File className="w-8 h-8" />
+                                    <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg">
+                                        <File className="w-6 h-6" />
+                                    </div>
                                     <div>
-                                        <p className="font-semibold text-lg">{file?.name}</p>
-                                        <p className="text-gray-500">{pages.length} pages • {pages.filter(p => p.selected).length} selected</p>
+                                        <h3 className="font-bold text-xl text-gray-900 leading-tight">{file?.name}</h3>
+                                        <p className="text-sm text-gray-500 font-medium">
+                                            {pages.length} pages • {pages.filter(p => p.selected).length} selected
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <button onClick={reset} className="btn-outline py-2 px-4 text-sm">
-                                        Cancel
+                                    <div className="flex items-center bg-white rounded-xl border border-gray-200 p-1.5 shadow-sm">
+                                        <button onClick={undo} disabled={historyIndex <= 0} className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30 transition-colors" title="Undo">
+                                            <Undo className="w-5 h-5" />
+                                        </button>
+                                        <div className="w-px h-5 bg-gray-200 mx-1.5" />
+                                        <button onClick={redo} disabled={historyIndex >= undoRedoHistory.length - 1} className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30 transition-colors" title="Redo">
+                                            <Redo className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                    <div className="w-px h-8 bg-gray-200 mx-1" />
+                                    <button onClick={reset} className="p-2.5 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition-colors" title="Reset">
+                                        <RefreshCw className="w-5 h-5" />
                                     </button>
                                     <button
                                         onClick={handleOrganize}
                                         disabled={pages.filter(p => p.selected).length === 0}
-                                        className="btn-primary py-2 px-6 disabled:opacity-50"
+                                        className="btn-primary py-3 px-8 rounded-xl shadow-lg shadow-black/10 flex items-center gap-2 group disabled:opacity-50 disabled:grayscale transition-all hover:scale-[1.02] active:scale-[0.98]"
                                     >
-                                        Apply Changes
+                                        <Layers className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                        <span className="font-bold">Apply Changes</span>
                                     </button>
                                 </div>
                             </div>
@@ -266,7 +316,10 @@ export default function OrganizePDFPage() {
                             <Reorder.Group
                                 axis="x"
                                 values={pages}
-                                onReorder={setPages}
+                                onReorder={(newPages) => {
+                                    setPages(newPages);
+                                    pushToUndoRedo(newPages);
+                                }}
                                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
                             >
                                 {pages.map((page, index) => (
