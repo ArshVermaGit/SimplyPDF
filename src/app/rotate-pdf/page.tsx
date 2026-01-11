@@ -4,7 +4,10 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, RotateCw, Eye } from "lucide-react";
+import { 
+    Upload, File as FileIcon, Download, CheckCircle2, RefreshCw, 
+    AlertCircle, RotateCw, ArrowRight
+} from "lucide-react";
 import Image from "next/image";
 import { rotatePDF, uint8ArrayToBlob } from "@/lib/pdf-utils";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
@@ -15,6 +18,7 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { EducationalContent } from "@/components/EducationalContent";
 import { useHistory } from "@/context/HistoryContext";
 
 interface PageInfo {
@@ -32,9 +36,10 @@ export default function RotatePDFPage() {
     const [errorMessage, setErrorMessage] = useState("");
     const [dragActive, setDragActive] = useState(false);
     const [pages, setPages] = useState<PageInfo[]>([]);
-    const [globalRotation, setGlobalRotation] = useState<90 | 180 | 270>(90);
+    const [globalRotation, setGlobalRotation] = useState<0 | 90 | 180 | 270>(0);
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewPage, setPreviewPage] = useState(0);
+    const [customFileName, setCustomFileName] = useState("rotated.pdf");
 
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
@@ -58,7 +63,6 @@ export default function RotatePDFPage() {
         setStatus("loading");
         setErrorMessage("");
         try {
-            console.log("Loading pdfjs-dist...");
             const pdfjsLib = await import("pdfjs-dist");
             const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
             pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
@@ -72,7 +76,6 @@ export default function RotatePDFPage() {
 
             const pdfDoc = await loadingTask.promise;
             const numPages = pdfDoc.numPages;
-            console.log(`${pdfFile.name} has ${numPages} pages`);
 
             const pageInfos: PageInfo[] = [];
             for (let i = 1; i <= numPages; i++) {
@@ -95,6 +98,7 @@ export default function RotatePDFPage() {
             }
 
             setPages(pageInfos);
+            setCustomFileName(`rotated_${pdfFile.name}`);
             setStatus("ready");
             await pdfDoc.destroy();
         } catch (error: unknown) {
@@ -105,20 +109,28 @@ export default function RotatePDFPage() {
         }
     };
 
+    const handleRotateIndividual = (index: number, delta: number) => {
+        setPages(prev => prev.map((p, i) => {
+            if (i === index) {
+                const newRotation = ((p.rotation + delta) % 360 + 360) % 360;
+                return { ...p, rotation: newRotation as 0 | 90 | 180 | 270 };
+            }
+            return p;
+        }));
+    };
+
     const handleRotate = async () => {
         if (!file) return;
         setStatus("processing");
         setErrorMessage("");
 
         try {
-            const pdfBytes = await rotatePDF(file, globalRotation);
+            const rotations = pages.map(p => (p.rotation + globalRotation) % 360);
+            const pdfBytes = await rotatePDF(file, rotations);
             setResultBlob(uint8ArrayToBlob(pdfBytes));
             setStatus("success");
-
-            if (file) {
-                addToHistory("Rotated PDF", file.name, `All pages rotated ${globalRotation}°`);
-            }
-        } catch (error) {
+            addToHistory("Rotated PDF", file.name, `Custom per-page rotations applied`);
+        } catch (error: unknown) {
             console.error(error);
             setErrorMessage(error instanceof Error ? error.message : "Failed to rotate PDF");
             setStatus("error");
@@ -130,7 +142,7 @@ export default function RotatePDFPage() {
         const url = URL.createObjectURL(resultBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `rotated-${file?.name || "document.pdf"}`;
+        link.download = customFileName;
         link.click();
         URL.revokeObjectURL(url);
     };
@@ -141,6 +153,7 @@ export default function RotatePDFPage() {
         setPages([]);
         setResultBlob(null);
         setErrorMessage("");
+        setGlobalRotation(90);
     };
 
     return (
@@ -160,7 +173,7 @@ export default function RotatePDFPage() {
                         >
                             <ToolHeader
                                 title="Rotate PDF"
-                                description="Rotate your PDF pages with visual preview."
+                                description="Rotate your PDF pages with pixel-perfect visual preview and local processing."
                                 icon={RotateCw}
                             />
 
@@ -190,7 +203,7 @@ export default function RotatePDFPage() {
                     {status === "loading" && (
                         <ProcessingState
                             message="Loading PDF..."
-                            description="Generating previews..."
+                            description="Generating high-definition previews..."
                         />
                     )}
 
@@ -202,103 +215,131 @@ export default function RotatePDFPage() {
                             exit={{ opacity: 0, y: -20 }}
                             className="max-w-6xl mx-auto"
                         >
-                            {/* Header */}
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-4">
-                                    <File className="w-8 h-8" />
-                                    <div>
-                                        <p className="font-semibold text-lg">{file?.name}</p>
-                                        <p className="text-gray-500">{pages.length} pages</p>
+                            <div className="flex flex-col gap-8">
+                                {/* Configuration Toolbar */}
+                                <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center">
+                                            <FileIcon className="w-6 h-6 text-gray-600" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-gray-900 truncate max-w-[200px]">{file?.name}</p>
+                                            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{pages.length} Pages</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col items-center gap-2">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Global Rotation Offset</p>
+                                        <div className="flex bg-gray-100 p-1 rounded-2xl">
+                                            {[
+                                                { value: 0, label: "0°" },
+                                                { value: 90, label: "90°" },
+                                                { value: 180, label: "180°" },
+                                                { value: 270, label: "270°" },
+                                            ].map((option) => (
+                                                <button
+                                                    key={option.value}
+                                                    onClick={() => setGlobalRotation(option.value as 0 | 90 | 180 | 270)}
+                                                    className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${
+                                                        globalRotation === option.value
+                                                        ? "bg-white text-black shadow-sm"
+                                                        : "text-gray-500 hover:text-black"
+                                                    }`}
+                                                >
+                                                    {option.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-4 w-full md:w-auto">
+                                        <button onClick={reset} className="flex-1 md:flex-none btn-outline py-4 px-8 rounded-2xl font-bold">
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleRotate}
+                                            className="flex-1 md:flex-none btn-primary py-4 px-10 rounded-2xl flex items-center justify-center gap-2 group shadow-xl shadow-black/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                        >
+                                            <RotateCw className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                                            <span className="font-bold">Apply & Save</span>
+                                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                        </button>
                                     </div>
                                 </div>
-                                <button onClick={reset} className="btn-outline py-2 px-4 text-sm">
-                                    Cancel
-                                </button>
-                            </div>
 
-                            {/* Rotation Options */}
-                            <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-                                <h3 className="font-semibold mb-4">Rotation Angle</h3>
-                                <div className="flex flex-wrap gap-3">
-                                    {[
-                                        { value: 90, label: "90°", desc: "Rotate right" },
-                                        { value: 180, label: "180°", desc: "Flip upside down" },
-                                        { value: 270, label: "270°", desc: "Rotate left" },
-                                    ].map((option) => (
-                                        <button
-                                            key={option.value}
-                                            onClick={() => setGlobalRotation(option.value as 90 | 180 | 270)}
-                                            className={`flex-1 min-w-32 p-4 rounded-xl border-2 text-center transition-all ${globalRotation === option.value
-                                                ? "border-black bg-gray-50"
-                                                : "border-gray-200 hover:border-gray-400"
-                                                }`}
-                                        >
-                                            <div className="flex items-center justify-center gap-2 mb-1">
-                                                <RotateCw className="w-5 h-5" style={{ transform: `rotate(${option.value}deg)` }} />
-                                                <span className="font-bold text-lg">{option.label}</span>
-                                            </div>
-                                            <p className="text-sm text-gray-500">{option.desc}</p>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Page Preview Grid */}
-                            <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-                                <h3 className="font-semibold mb-4">Page Preview (Click to view full page)</h3>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                                    {pages.map((page, index) => (
-                                        <motion.div
-                                            key={page.pageNumber}
-                                            layout
-                                            whileHover={{ y: -2, scale: 1.02 }}
-                                            className="relative group cursor-pointer"
-                                            onClick={() => { setPreviewPage(index); setPreviewOpen(true); }}
-                                        >
-                                            <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-black transition-all">
-                                                <div
-                                                    className="aspect-3/4 bg-white transition-transform duration-500 relative"
-                                                    style={{ transform: `rotate(${globalRotation}deg)` }}
-                                                >
-                                                    <Image
-                                                        src={page.image}
-                                                        alt={`Page ${page.pageNumber}`}
-                                                        fill
-                                                        className="object-contain"
-                                                        unoptimized
-                                                    />
-                                                </div>
-
-                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex flex-col items-center justify-center gap-2 backdrop-blur-[2px] opacity-0 group-hover:opacity-100">
-                                                    <div className="bg-white/20 backdrop-blur-md border border-white/30 p-2.5 rounded-full shadow-2xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                                                        <Eye className="w-5 h-5 text-white" />
+                                {/* Preview Grid */}
+                                <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-xl">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Visual Layout Preview</h3>
+                                        <div className="flex items-center gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                            <span>Click to preview</span>
+                                            <div className="w-px h-3 bg-gray-200" />
+                                            <span>Use arrows to rotate individual pages</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-8">
+                                        {pages.map((page, index) => (
+                                            <motion.div
+                                                key={page.pageNumber}
+                                                layout
+                                                className="relative group"
+                                            >
+                                                <div className="relative aspect-[3/4.2] rounded-xl overflow-hidden border border-gray-100 group-hover:border-black transition-all shadow-sm group-hover:shadow-2xl">
+                                                    <div
+                                                        className="w-full h-full transition-transform duration-500 origin-center cursor-pointer"
+                                                        onClick={() => { setPreviewPage(index); setPreviewOpen(true); }}
+                                                        style={{ transform: `rotate(${(page.rotation + globalRotation) % 360}deg)` }}
+                                                    >
+                                                        <Image
+                                                            src={page.image}
+                                                            alt={`Page ${page.pageNumber}`}
+                                                            fill
+                                                            className="object-cover"
+                                                            unoptimized
+                                                        />
                                                     </div>
-                                                    <span className="text-[10px] font-bold text-white uppercase tracking-wider">Preview</span>
-                                                </div>
+                                                    
+                                                    {/* Individual Page Controls */}
+                                                    <div className="absolute top-1 right-1 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); handleRotateIndividual(index, 90); }}
+                                                            className="w-8 h-8 bg-black/90 text-white rounded-lg flex items-center justify-center hover:bg-black transition-colors shadow-lg"
+                                                            title="Rotate 90° clockwise"
+                                                        >
+                                                            <RotateCw className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
 
-                                                <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black text-white text-xs font-bold rounded">
-                                                    {page.pageNumber}
+                                                    <div className="absolute inset-0 pointer-events-none bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
+
+                                                    <div className="absolute top-2 left-2 w-6 h-6 bg-black/80 backdrop-blur-md text-white text-[10px] font-bold rounded-lg flex items-center justify-center pointer-events-none">
+                                                        {page.pageNumber}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </motion.div>
-                                    ))}
+                                            </motion.div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Action Button */}
-                            <div className="flex justify-center">
-                                <button onClick={handleRotate} className="btn-primary py-4 px-12 text-lg">
-                                    <RotateCw className="w-5 h-5 inline mr-2" />
-                                    Rotate All Pages
-                                </button>
+                                <div className="max-w-md mx-auto w-full">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1 mb-2 block text-center">Output Filename</label>
+                                    <input 
+                                        type="text"
+                                        value={customFileName}
+                                        onChange={(e) => setCustomFileName(e.target.value)}
+                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-black/5 transition-all text-sm font-medium text-center shadow-lg"
+                                    />
+                                </div>
                             </div>
                         </motion.div>
                     )}
 
+
                     {status === "processing" && (
                         <ProcessingState
                             message="Rotating pages..."
-                            description="This won't take long..."
+                            description="Applying orientation fixes locally..."
                         />
                     )}
 
@@ -307,24 +348,50 @@ export default function RotatePDFPage() {
                             key="success"
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
+                            className="max-w-4xl mx-auto"
                         >
-                            <div className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mb-8">
-                                <CheckCircle2 className="w-10 h-10" />
+                            <div className="text-center mb-12">
+                                <motion.div 
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-black/10"
+                                >
+                                    <CheckCircle2 className="w-10 h-10" />
+                                </motion.div>
+                                <h2 className="text-4xl font-black text-gray-900 mb-2">PDF Rotated!</h2>
+                                <p className="text-gray-500 font-medium text-lg">All pages have been successfully reoriented.</p>
                             </div>
-                            <h2 className="text-3xl font-bold mb-2">PDF Rotated!</h2>
-                            <p className="text-gray-500 mb-10">All pages rotated {globalRotation}°</p>
 
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <button onClick={handleDownload} className="btn-primary py-4 px-10 flex items-center gap-2">
-                                    <Download className="w-5 h-5" />
-                                    Download PDF
-                                </button>
-                                <button onClick={reset} className="btn-outline py-4 px-10 flex items-center gap-2">
-                                    <RefreshCw className="w-5 h-5" />
-                                    Rotate Another
-                                </button>
-                            </div>
+                            <ToolCard className="p-10 max-w-2xl mx-auto shadow-2xl">
+                                <div className="flex flex-col items-center gap-8">
+                                    <div className="flex items-center gap-6 w-full p-6 bg-blue-50 rounded-2xl border border-blue-100">
+                                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600">
+                                            <RotateCw className="w-6 h-6" style={{ transform: `rotate(${globalRotation}deg)` }} />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-gray-900">Orientation Applied</p>
+                                            <p className="text-xs text-blue-700 font-medium">{globalRotation}&deg; rotation applied to all pages</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="w-full space-y-4">
+                                        <button 
+                                            onClick={handleDownload}
+                                            className="w-full btn-primary py-5 rounded-2xl flex items-center justify-center gap-3 text-lg group hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                        >
+                                            <Download className="w-6 h-6 group-hover:translate-y-0.5 transition-transform" />
+                                            <span className="font-bold">Download Rotated PDF</span>
+                                        </button>
+                                        <button 
+                                            onClick={reset}
+                                            className="w-full btn-outline py-5 rounded-2xl flex items-center justify-center gap-3 text-lg transition-all"
+                                        >
+                                            <RefreshCw className="w-5 h-5" />
+                                            Rotate New
+                                        </button>
+                                    </div>
+                                </div>
+                            </ToolCard>
                         </motion.div>
                     )}
 
@@ -348,6 +415,40 @@ export default function RotatePDFPage() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                <EducationalContent
+                    howItWorks={{
+                        title: "How to Rotate PDF",
+                        steps: [
+                            "Upload your PDF and wait for our local engine to generate high-speed previews.",
+                            "Select your desired rotation angle (90, 180, or 270 degrees) and watch the previews update in real-time.",
+                            "Download your perfectly oriented PDF. All processing happens locally for maximum privacy."
+                        ]
+                    }}
+                    benefits={{
+                        title: "Professional PDF Orientation",
+                        items: [
+                            { title: "Visual Preview", desc: "See exactly how your document will look before you commit the changes." },
+                            { title: "Browser-side Processing", desc: "No files are ever uploaded. Your data stays on your machine, 100% private." },
+                            { title: "High Speed", desc: "Reorient large documents in milliseconds using our optimized PDF engine." },
+                            { title: "Lossless Rotation", desc: "We update the orientation flags without re-encoding, preserving 100% quality." }
+                        ]
+                    }}
+                    faqs={[
+                        {
+                            question: "Can I rotate individual pages?",
+                            answer: "Currently, our 'Rotate All' tool applies the rotation to the entire document. For individual page management, try our 'Organize PDF' tool."
+                        },
+                        {
+                            question: "Does rotation affect image quality?",
+                            answer: "Not at all. We use lossless rotation that simply updates the display metadata within the PDF structure, keeping every pixel exactly as it was."
+                        },
+                        {
+                            question: "Is there a file size limit?",
+                            answer: "Since processing happens in your browser, the limit is governed by your device's memory. Most files up to 200MB rotate instantly."
+                        }
+                    ]}
+                />
             </div>
 
             {/* Preview Modal */}
@@ -357,7 +458,7 @@ export default function RotatePDFPage() {
                 images={pages.map(p => p.image)}
                 currentPage={previewPage}
                 onPageChange={setPreviewPage}
-                rotation={globalRotation}
+                rotation={(pages[previewPage]?.rotation || 0) + globalRotation}
                 onDownload={handleRotate}
                 title="Rotate PDF Preview"
             />
