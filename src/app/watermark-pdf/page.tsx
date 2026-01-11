@@ -4,9 +4,10 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, Stamp, Eye } from "lucide-react";
+import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, Stamp, Eye } from "lucide-react";
+import Image from "next/image";
 import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
-import { formatFileSize, uint8ArrayToBlob } from "@/lib/pdf-utils";
+import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import {
     AnimatedBackground,
@@ -76,17 +77,18 @@ export default function WatermarkPDFPage() {
                 const context = canvas.getContext("2d")!;
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                await page.render({ canvasContext: context, viewport } as any).promise;
+                await page.render({ canvasContext: context, viewport }).promise;
                 pageImages.push(canvas.toDataURL("image/jpeg", 0.6));
-                (page as any).cleanup?.();
+                (page as { cleanup?: () => void }).cleanup?.();
             }
 
             setPages(pageImages);
             setStatus("ready");
             await pdfDoc.destroy();
-        } catch (error: any) {
-            console.error(error);
-            setErrorMessage(`Failed to load PDF preview: ${error.message || "Unknown error"}`);
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error(err);
+            setErrorMessage(`Failed to load PDF preview: ${err.message || "Unknown error"}`);
             setStatus("error");
         }
     };
@@ -286,10 +288,12 @@ export default function WatermarkPDFPage() {
                                     >
                                         {pages[0] && (
                                             <>
-                                                <img
+                                                <Image
                                                     src={pages[0]}
                                                     alt="Preview"
-                                                    className="w-full h-full object-contain"
+                                                    fill
+                                                    className="object-contain"
+                                                    unoptimized
                                                 />
                                                 {/* Watermark overlay simulation */}
                                                 <div
@@ -311,11 +315,12 @@ export default function WatermarkPDFPage() {
                                             </>
                                         )}
 
-                                        {/* Click to expand hint */}
-                                        <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
-                                            <div className="opacity-0 hover:opacity-100 transition-opacity bg-white p-2 rounded-full shadow-lg">
-                                                <Eye className="w-5 h-5" />
+                                        {/* Premium Hover Preview */}
+                                        <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-all duration-300 flex flex-col items-center justify-center gap-2 backdrop-blur-[2px] opacity-0 hover:opacity-100 group">
+                                            <div className="bg-white/20 backdrop-blur-md border border-white/30 p-3 rounded-full shadow-2xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                                                <Eye className="w-6 h-6 text-white" />
                                             </div>
+                                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">Preview Result</span>
                                         </div>
                                     </div>
 
@@ -329,7 +334,13 @@ export default function WatermarkPDFPage() {
                                                     className={`relative flex-shrink-0 w-16 aspect-[3/4] rounded-lg border-2 overflow-hidden cursor-pointer hover:border-black transition-colors ${index === 0 ? "border-black" : "border-gray-200"
                                                         }`}
                                                 >
-                                                    <img src={img} alt={`Page ${index + 1}`} className="w-full h-full object-contain" />
+                                                    <Image
+                                                        src={img}
+                                                        alt={`Page ${index + 1}`}
+                                                        fill
+                                                        className="object-contain"
+                                                        unoptimized
+                                                    />
                                                     <div className="absolute bottom-0.5 left-0.5 px-1 py-0.5 bg-black text-white text-xs font-bold rounded">
                                                         {index + 1}
                                                     </div>
@@ -404,7 +415,9 @@ export default function WatermarkPDFPage() {
                 images={pages}
                 currentPage={previewPage}
                 onPageChange={setPreviewPage}
-                title={file?.name || "PDF Preview"}
+                watermark={{ text: watermarkText, opacity, fontSize }}
+                onDownload={handleWatermark}
+                title="Watermark PDF Preview"
             />
         </div>
     );
