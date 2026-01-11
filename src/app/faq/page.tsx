@@ -10,12 +10,6 @@ import {
     Zap,
     FileText,
     ArrowLeft,
-    Lock,
-    Merge,
-    Split,
-    Minimize2,
-    Image,
-    RotateCw,
     Search
 } from "lucide-react";
 
@@ -254,7 +248,7 @@ export default function FAQPage() {
                     transition={{ delay: 0.15 }}
                     className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12"
                 >
-                    {faqCategories.map((category, index) => (
+                    {faqCategories.map((category) => (
                         <a
                             key={category.title}
                             href={`#${category.title.toLowerCase().replace(/\s+/g, '-')}`}
