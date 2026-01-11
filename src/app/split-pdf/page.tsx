@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, Scissors, Maximize2, Check, LayoutGrid } from "lucide-react";
+import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, Scissors, Maximize2, Check, LayoutGrid, Undo, Redo } from "lucide-react";
 import Image from "next/image";
 import { splitPDF, downloadAsZip, formatFileSize } from "@/lib/pdf-utils";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
@@ -50,6 +50,36 @@ export default function SplitPDFPage() {
     const [customFileName, setCustomFileName] = useState("split_document.pdf");
     const [splitPattern, setSplitPattern] = useState("{filename}_part_{n}"); // New pattern state
     const [lastSelectedPage, setLastSelectedPage] = useState<number | null>(null); // For Shift+Click
+
+    // History for Undo/Redo
+    const [undoRedoHistory, setUndoRedoHistory] = useState<{ pages: PageInfo[]; manualCuts: Set<number> }[]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
+
+    const pushToUndoRedo = (newPages: PageInfo[], newCuts: Set<number>) => {
+        const newHistory = undoRedoHistory.slice(0, historyIndex + 1);
+        newHistory.push({ pages: newPages, manualCuts: new Set(newCuts) });
+        if (newHistory.length > 20) newHistory.shift();
+        setUndoRedoHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+    };
+
+    const undo = () => {
+        if (historyIndex > 0) {
+            const newIndex = historyIndex - 1;
+            setHistoryIndex(newIndex);
+            setPages(undoRedoHistory[newIndex].pages);
+            setManualCuts(new Set(undoRedoHistory[newIndex].manualCuts));
+        }
+    };
+
+    const redo = () => {
+        if (historyIndex < undoRedoHistory.length - 1) {
+            const newIndex = historyIndex + 1;
+            setHistoryIndex(newIndex);
+            setPages(undoRedoHistory[newIndex].pages);
+            setManualCuts(new Set(undoRedoHistory[newIndex].manualCuts));
+        }
+    };
 
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
@@ -109,6 +139,8 @@ export default function SplitPDFPage() {
             }
 
             setPages(pageInfos);
+            setCustomFileName(`${pdfFile.name.replace('.pdf', '')}_split.pdf`);
+            pushToUndoRedo(pageInfos, new Set());
             setStatus("ready");
             await pdfDoc.destroy();
         } catch (error: unknown) {
@@ -129,14 +161,18 @@ export default function SplitPDFPage() {
         if (isShiftKey && lastSelectedPage !== null) {
             const start = Math.min(lastSelectedPage, pageNumber);
             const end = Math.max(lastSelectedPage, pageNumber);
-            setPages(pages.map(p =>
+            const newPages = pages.map(p =>
                 p.pageNumber >= start && p.pageNumber <= end ? { ...p, selected: true } : p
-            ));
+            );
+            setPages(newPages);
+            pushToUndoRedo(newPages, manualCuts);
         } else {
-            setPages(pages.map(p =>
+            const newPages = pages.map(p =>
                 p.pageNumber === pageNumber ? { ...p, selected: !p.selected } : p
-            ));
+            );
+            setPages(newPages);
             setLastSelectedPage(pageNumber);
+            pushToUndoRedo(newPages, manualCuts);
         }
     };
 
@@ -201,8 +237,16 @@ export default function SplitPDFPage() {
         return [{ id: "default-group", pages: pages, label: "All Pages" }];
     };
 
-    const selectAll = () => setPages(pages.map(p => ({ ...p, selected: true })));
-    const deselectAll = () => setPages(pages.map(p => ({ ...p, selected: false })));
+    const selectAll = () => {
+        const newPages = pages.map(p => ({ ...p, selected: true }));
+        setPages(newPages);
+        pushToUndoRedo(newPages, manualCuts);
+    };
+    const deselectAll = () => {
+        const newPages = pages.map(p => ({ ...p, selected: false }));
+        setPages(newPages);
+        pushToUndoRedo(newPages, manualCuts);
+    };
 
     const toggleCut = (index: number) => {
         const newCuts = new Set(manualCuts);
@@ -212,6 +256,7 @@ export default function SplitPDFPage() {
             newCuts.add(index);
         }
         setManualCuts(newCuts);
+        pushToUndoRedo(pages, newCuts);
     };
 
     const handleSplit = async () => {
@@ -227,7 +272,7 @@ export default function SplitPDFPage() {
                         .filter(p => p.selected)
                         .map(p => p.pageNumber.toString())
                         .join(",");
-                    splitFiles = await splitPDF(file, "range", selectedRanges);
+                    splitFiles = await splitPDF(file, "range", selectedRanges, splitPattern);
                     break;
                 case "manual":
                     const sortedCuts = Array.from(manualCuts).sort((a, b) => a - b);
@@ -240,19 +285,19 @@ export default function SplitPDFPage() {
                     if (lastPage < pages.length) {
                         manualRanges.push(`${lastPage + 1}-${pages.length}`);
                     }
-                    splitFiles = await splitPDF(file, "range", manualRanges.join(","));
+                    splitFiles = await splitPDF(file, "range", manualRanges.join(","), splitPattern);
                     break;
                 case "range":
-                    splitFiles = await splitPDF(file, "range", ranges);
+                    splitFiles = await splitPDF(file, "range", ranges, splitPattern);
                     break;
                 case "fixed_range":
-                    splitFiles = await splitPDF(file, "fixed_range", Number(fixedRange));
+                    splitFiles = await splitPDF(file, "fixed_range", Number(fixedRange), splitPattern);
                     break;
                 case "size_limit":
-                    splitFiles = await splitPDF(file, "size_limit", Number(sizeLimit));
+                    splitFiles = await splitPDF(file, "size_limit", Number(sizeLimit), splitPattern);
                     break;
                 default:
-                    splitFiles = await splitPDF(file, "all");
+                    splitFiles = await splitPDF(file, "all", undefined, splitPattern);
             }
             setResults(splitFiles);
             setStatus("success");
@@ -366,15 +411,35 @@ export default function SplitPDFPage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-3">
                                             {mode === "select" && (
-                                                <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-gray-200">
-                                                    <button onClick={selectAll} className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider hover:bg-gray-50 rounded-md transition-colors">Select All</button>
-                                                    <div className="w-px h-3 bg-gray-200" />
-                                                    <button onClick={deselectAll} className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider hover:bg-gray-50 rounded-md transition-colors">Clear</button>
+                                                <div className="flex items-center bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+                                                    <button 
+                                                        onClick={selectAll} 
+                                                        className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider hover:bg-gray-50 rounded-md transition-colors whitespace-nowrap"
+                                                    >
+                                                        Select All
+                                                    </button>
+                                                    <div className="w-px h-4 bg-gray-200 mx-1" />
+                                                    <button 
+                                                        onClick={deselectAll} 
+                                                        className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider hover:bg-gray-50 rounded-md transition-colors whitespace-nowrap"
+                                                    >
+                                                        Clear
+                                                    </button>
                                                 </div>
                                             )}
-                                            <button onClick={reset} className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition-colors">
+                                            <div className="flex items-center bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+                                                <button onClick={undo} disabled={historyIndex <= 0} className="p-1.5 hover:bg-gray-100 rounded-md disabled:opacity-30 transition-colors" title="Undo">
+                                                    <Undo className="w-4 h-4" />
+                                                </button>
+                                                <div className="w-px h-4 bg-gray-200 mx-1" />
+                                                <button onClick={redo} disabled={historyIndex >= undoRedoHistory.length - 1} className="p-1.5 hover:bg-gray-100 rounded-md disabled:opacity-30 transition-colors" title="Redo">
+                                                    <Redo className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            <div className="w-px h-6 bg-gray-200" />
+                                            <button onClick={reset} className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition-colors" title="Reset">
                                                 <RefreshCw className="w-5 h-5" />
                                             </button>
                                         </div>
@@ -433,7 +498,7 @@ export default function SplitPDFPage() {
                                                                     {/* Zoom Action */}
                                                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex flex-col items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
                                                                         <button
-                                                                            onClick={(e) => { e.stopPropagation(); setPreviewPage(index); setPreviewOpen(true); }}
+                                                                            onClick={(e) => { e.stopPropagation(); setPreviewPage(pages.findIndex(p => p.pageNumber === page.pageNumber)); setPreviewOpen(true); }}
                                                                             className="w-10 h-10 bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full flex items-center justify-center transform scale-75 group-hover:scale-100 transition-all duration-300 hover:bg-white hover:text-black"
                                                                         >
                                                                             <Maximize2 className="w-5 h-5" />
