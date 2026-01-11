@@ -4,15 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoogleLogin } from "@react-oauth/google";
+import Image from "next/image";
 import { useAuth } from "@/context/AuthProvider";
 import {
-  Menu,
-  X,
   Merge,
   Split,
   Minimize2,
   RotateCw,
-  Image,
+  Image as ImageIcon,
   FileImage,
   Lock,
   Unlock,
@@ -29,7 +28,7 @@ const tools = [
   { title: "Split PDF", icon: Split, href: "/split-pdf" },
   { title: "Compress", icon: Minimize2, href: "/compress-pdf" },
   { title: "Rotate", icon: RotateCw, href: "/rotate-pdf" },
-  { title: "JPG to PDF", icon: Image, href: "/jpg-to-pdf" },
+  { title: "JPG to PDF", icon: ImageIcon, href: "/jpg-to-pdf" },
   { title: "PDF to JPG", icon: FileImage, href: "/pdf-to-jpg" },
   { title: "Unlock", icon: Unlock, href: "/unlock-pdf" },
   { title: "Protect", icon: Lock, href: "/protect-pdf" },
@@ -148,11 +147,15 @@ export default function Header() {
                   className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 transition-colors"
                 >
                   {user.picture ? (
-                    <img
-                      src={user.picture}
-                      alt={user.name}
-                      className="w-9 h-9 rounded-full object-cover border-2 border-gray-200"
-                    />
+                    <div className="relative w-9 h-9">
+                      <Image
+                        src={user.picture}
+                        alt={user.name}
+                        fill
+                        className="rounded-full object-cover border-2 border-gray-200"
+                        unoptimized
+                      />
+                    </div>
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
                       <User className="w-5 h-5 text-gray-500" />
@@ -257,11 +260,15 @@ export default function Header() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {user.picture ? (
-                        <img
-                          src={user.picture}
-                          alt={user.name}
-                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-                        />
+                        <div className="relative w-10 h-10">
+                          <Image
+                            src={user.picture}
+                            alt={user.name}
+                            fill
+                            className="rounded-full object-cover border-2 border-gray-200"
+                            unoptimized
+                          />
+                        </div>
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                           <User className="w-5 h-5 text-gray-500" />
