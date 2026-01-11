@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, File, X, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, Shield, Lock, Info } from "lucide-react";
+import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, Shield, Lock } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import { formatFileSize, uint8ArrayToBlob } from "@/lib/pdf-utils";
 import {
@@ -30,7 +30,7 @@ export default function ProtectPDFPage() {
         modifying: true,
         annotating: true
     });
-    const [encryptionLevel, setEncryptionLevel] = useState<"128" | "256">("256");
+    const [encryptionLevel] = useState<"128" | "256">("256");
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
@@ -87,9 +87,10 @@ export default function ProtectPDFPage() {
             if (file) {
                 addToHistory("Protected PDF", file.name, "Password protection added");
             }
-        } catch (error) {
-            console.error(error);
-            setErrorMessage("Failed to process PDF. Please try again.");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error(err);
+            setErrorMessage(err.message || "Failed to process PDF. Please try again.");
             setStatus("error");
         }
     };
