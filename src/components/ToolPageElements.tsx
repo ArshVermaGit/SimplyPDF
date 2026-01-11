@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 
 // Floating decoration component
 export const FloatingShape = ({ className, delay = 0 }: { className: string; delay?: number }) => (
@@ -88,12 +88,12 @@ export function ToolPageBackground({ children, className = "" }: ToolPageBackgro
 
 // Page header component
 interface ToolHeaderProps {
-    icon?: any;
+    icon?: React.ElementType | React.ReactNode;
     title: string;
     description: string;
 }
 
-export function ToolHeader({ icon: Icon, title, description }: ToolHeaderProps) {
+export function ToolHeader({ icon, title, description }: ToolHeaderProps) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -101,16 +101,18 @@ export function ToolHeader({ icon: Icon, title, description }: ToolHeaderProps) 
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
         >
-            {Icon && (
+            {icon && (
                 <motion.div
                     className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-50 rounded-3xl mb-6 shadow-lg shadow-gray-200/50"
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ type: "spring", stiffness: 400 }}
                 >
-                    {typeof Icon === 'function' || (typeof Icon === 'object' && (Icon.$$typeof || Icon.render)) ? (
-                        <Icon className="w-10 h-10" />
+                    {React.isValidElement(icon) ? (
+                        icon
+                    ) : (typeof icon === 'function' || (typeof icon === 'object' && icon !== null)) ? (
+                        React.createElement(icon as React.ComponentType<{ className?: string }>, { className: "w-10 h-10" })
                     ) : (
-                        Icon
+                        icon as React.ReactNode
                     )}
                 </motion.div>
             )}
