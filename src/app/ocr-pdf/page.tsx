@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Download, Loader2, CheckCircle2, RefreshCw, AlertCircle, ScanLine, FileText, Copy } from "lucide-react";
+import { Upload, Download, CheckCircle2, RefreshCw, AlertCircle, ScanLine, FileText, Copy } from "lucide-react";
 import { formatFileSize } from "@/lib/pdf-utils";
 import {
     AnimatedBackground,
@@ -74,7 +74,9 @@ export default function OCRPDFPage() {
 
                 // First try to get existing text
                 const textContent = await page.getTextContent();
-                const pageText = textContent.items.map((item: any) => item.str).join(" ");
+                const pageText = textContent.items
+                    .map((item) => ("str" in item ? (item as { str: string }).str : ""))
+                    .join(" ");
 
                 if (pageText.trim().length > 50) {
                     // Page has existing text, use it
@@ -87,12 +89,12 @@ export default function OCRPDFPage() {
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
 
-                    await page.render({ canvasContext: context, viewport } as any).promise;
+                    await page.render({ canvasContext: context, viewport }).promise;
 
                     const imageData = canvas.toDataURL("image/png");
 
                     const result = await Tesseract.recognize(imageData, "eng", {
-                        logger: (m: any) => {
+                        logger: (m: { status: string; progress: number }) => {
                             if (m.status === "recognizing text") {
                                 setProgress(Math.round(((i - 1) / numPages + m.progress / numPages) * 100));
                             }
@@ -100,7 +102,7 @@ export default function OCRPDFPage() {
                     });
 
                     fullText += `\n--- Page ${i} (OCR) ---\n${result.data.text}\n`;
-                    (page as any).cleanup?.();
+                    (page as { cleanup?: () => void }).cleanup?.();
                 }
             }
 
