@@ -277,7 +277,7 @@ export default function SignPDFPage() {
                     width: sigWidth,
                     height: sigHeight,
                     opacity: signatureOpacity,
-                    rotate: { type: 'degrees', angle: -signatureRotation } as any, // CCW for pdf-lib degrees
+                    rotate: { type: 'degrees', angle: -signatureRotation } as never, // CCW for pdf-lib degrees
                 });
             }
 
@@ -617,7 +617,7 @@ export default function SignPDFPage() {
                                                 ].map((t) => (
                                                     <button 
                                                         key={t.id}
-                                                        onClick={() => setTargetPages(t.id as any)}
+                                                        onClick={() => setTargetPages(t.id as "current" | "all" | "range")}
                                                         className={`flex-1 py-3 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all ${targetPages === t.id ? "bg-white text-black shadow-sm" : "text-gray-500"}`}
                                                     >
                                                         {t.label}
