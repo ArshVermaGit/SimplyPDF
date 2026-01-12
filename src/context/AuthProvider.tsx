@@ -15,6 +15,7 @@ interface User {
 interface AuthContextType {
     user: User | null;
     login: (credentialResponse: CredentialResponse) => void;
+    logout: () => void;
     isLoading: boolean;
 }
 
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
                 const parsed = JSON.parse(storedUser);
                 // No need for setTimeout(..., 0) which causes flicker, just set it
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setUser(parsed);
             } catch (e) {
                 console.error("Failed to parse stored user", e);
