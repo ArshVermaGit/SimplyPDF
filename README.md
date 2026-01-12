@@ -1,198 +1,127 @@
-<div align="center">
+# SimplyPDF - The Easiest PDF Tool
 
-# 📄 SimplyPDF
+![SimplyPDF Banner](public/icon.png)
 
-### *The Ultimate Premium Suite for Your PDF Needs*
+> **The ultimate, privacy-focused PDF swiss-army knife built with Next.js 16 and Tailwind CSS.**
 
-[![Website](https://img.shields.io/badge/🌐_Live_Demo-simplypdf.vercel.app-000000?style=for-the-badge&labelColor=5B21B6)](https://simplypdf.vercel.app)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Arsh_Verma-0077B5?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/arshvermadev/)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Next.js](https://img.shields.io/badge/Next.js-16.1.0-default?style=flat&logo=next.js&logoColor=white)](https://nextjs.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
----
+## 🚀 Overview
 
-### ✨ **100% Free • Privacy-First • Lightning Fast** ✨
+**SimplyPDF** is a hyper-premium, client-side PDF manipulation suite designed for speed, privacy, and ease of use. Unlike other tools, SimplyPDF processes files **locally in your browser**, ensuring your documents never leave your device.
 
-*SimplyPDF is a state-of-the-art web application designed to handle complex PDF tasks directly in your browser. With a focus on **Privacy-First Architecture**, your files never touch a server—everything is processed locally on your machine.*
+Featuring a stunning, responsive UI built with Tailwind CSS and Framer Motion, it offers a desktop-class editing experience on the web.
 
-[🚀 Launch App](https://simplypdf.vercel.app) • [📖 Documentation](#-getting-started) • [⭐ Star on GitHub](https://github.com/ArshVermaGit/SimplyPDF)
+## ✨ Key Features
 
-</div>
+SimplyPDF includes **16+ powerful tools** to handle any PDF task:
 
----
+### 📝 Editing & Modification
 
-## 🎨 Visual Experience
+- **Edit PDF**: Full-featured editor to add text, shapes, images, freehand drawings, and signatures.
+- **Sign PDF**: Add digital signatures to your documents securely.
+- **Watermark PDF**: Apply custom text or image watermarks for copyright protection.
+- **Rotate PDF**: Rotate individual pages or entire documents.
+- **Organize PDF**: Rearrange, delete, or sort pages within your PDF.
 
-### **Modern • Premium • Aesthetic**
+### 🔄 Conversion
 
-SimplyPDF isn't just a tool; it's a **premium experience**. Featuring **Animated Backgrounds**, **Floating 3D Decorations**, and **Smooth Framer Motion Transitions**, we've brought high-end design to document management.
+- **PDF to Word**: Convert non-selectable PDFs to editable Word documents.
+- **Word to PDF**: Convert DOC/DOCX files to professional PDFs.
+- **PDF to Excel**: Extract tables and data into Excel spreadsheets.
+- **PDF to JPG**: Convert PDF pages into high-quality images.
+- **JPG to PDF**: Create PDFs from images.
 
-<div align="center">
+### 🛠️ File Management
 
-| 🏠 **Landing Page** |
-|:---:|
-| ![Homepage](public/screenshots/homepage.png) |
+- **Merge PDF**: Combine multiple PDFs into a single file.
+- **Split PDF**: Extract ranges or specific pages into new PDFs.
+- **Compress PDF**: Optimize file size without losing quality.
+- **Unlock PDF**: Remove passwords from protected files.
+- **Protect PDF**: Encrypt your PDF with strong passwords.
+- **OCR PDF**: Recognize text in scanned documents via Tesseract.js.
 
-| 🔍 **Features Overview** | 🖼️ **Merge PDFs** |
-|:---:|:---:|
-| ![Features](public/screenshots/features.png) | ![Merge PDF](public/screenshots/merge.png) |
-</div>
+## 🛠️ Technology Stack
 
----
+Built with the latest and greatest web technologies:
 
-## ✨ Features at a Glance
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) + [Framer Motion](https://www.framer.com/motion/) for animations.
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **PDF Engine**: `pdf-lib`, `pdfjs-dist`, `@neslinesli93/qpdf-wasm`
+- **OCR Engine**: `tesseract.js`
+- **File Handling**: `file-saver`, `jszip`
+- **Icons**: `lucide-react`
+- **Auth & Ads**: Google Identity Services + Google AdSense
 
-SimplyPDF packs **16+ powerful tools** into one seamless interface:
+## ⚡ Getting Started
 
-<div align="center">
+### Prerequisites
 
-| Category | Features |
-|:---|:---|
-| 🔄 **Conversions** | Word ↔️ PDF • Excel ↔️ PDF • JPG ↔️ PDF • PNG to PDF |
-| 🔍 **AI-Powered OCR** | Extract text from scanned documents using industry-leading AI |
-| 🔐 **Security** | Password-protect files • Remove restrictions with a click |
-| ✍️ **Editing Suite** | Add text • Draw shapes • Digital signatures • Custom watermarks |
-| ⚡ **Optimization** | Compress file sizes without losing quality |
-| 📂 **Organization** | Merge • Split • Rotate • Reorder pages intuitively |
+- Node.js (v18 or higher)
+- npm or yarn
 
-</div>
+### Installation
 
----
+1. **Clone the repository:**
 
-## 🛠️ Tech Stack
+   ```bash
+   git clone https://github.com/yourusername/SimplyPDF.git
+   cd SimplyPDF
+   ```
 
-Built with a modern, high-performance stack for a seamless user experience:
+2. **Install dependencies:**
 
-<div align="center">
+   ```bash
+   npm install
+   ```
 
-![Next.js](https://img.shields.io/badge/Next.js_14+-000000?style=for-the-badge&logo=next.js)
-![React](https://img.shields.io/badge/React_18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+3. **Set up environment variables:**
+   Create a `.env.local` file in the root directory:
 
-</div>
+   ```env
+   NEXT_PUBLIC_BASE_URL=http://localhost:3000
+   NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+   ```
 
-**Core Libraries:**
-- **Frontend Framework:** [Next.js 14+](https://nextjs.org/) with App Router
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Animations:** [Framer Motion](https://www.framer.com/motion/)
-- **PDF Processing:** `pdf-lib`, `pdfjs-dist`
-- **OCR Engine:** `tesseract.js`
-- **Document Export:** `docx` (Word), `xlsx` (Excel)
+4. **Run the development server:**
 
----
+   ```bash
+   npm run dev
+   ```
 
-## 🔒 Privacy Architecture
+   Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-SimplyPDF treats your privacy as the **#1 feature**:
+## 📦 Build & Deploy
 
-<div align="center">
+This project is optimized for deployment on [Vercel](https://vercel.com).
 
-```mermaid
-graph LR
-    A[Your Device] -->|Upload File| B[Browser Memory]
-    B -->|Process| C[Local Processing]
-    C -->|Download| D[Your Device]
-    style B fill:#10b981
-    style C fill:#10b981
-```
-
-</div>
-
-| Feature | Description |
-|:---|:---|
-| 🏠 **Local Processing** | All file manipulations occur in your browser's RAM |
-| 🚫 **No Cloud Storage** | We don't have a backend that stores your documents |
-| 🔓 **No Signup Required** | Start working immediately without giving away personal info |
-| 🗑️ **Auto-Delete** | Files are cleared from memory when you close the tab |
-
----
-
-## 🚀 Getting Started
-
-### Quick Start (Run Locally)
+To create a production build locally:
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/ArshVermaGit/SimplyPDF.git
-
-# 2. Navigate to project directory
-cd SimplyPDF
-
-# 3. Install dependencies
-npm install
-
-# 4. Launch development server
-npm run dev
+npm run build
+npm start
 ```
-
-Open `http://localhost:3000` to start using SimplyPDF locally!
-
-### Or Try It Live
-
-**👉 [Launch SimplyPDF](https://simplypdf.vercel.app) - No installation needed!**
-
----
-
-## 📸 Screenshots
-
-<div align="center">
-
-### Modern Interface with Premium Animations
-
-![Features Showcase](public/screenshots/homepage.png)
-
-*Experience smooth transitions, floating elements, and an intuitive drag-and-drop interface*
-
-</div>
-
----
 
 ## 🤝 Contributing
 
-Contributions are welcome! Feel free to:
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. 🐛 Report bugs
-2. 💡 Suggest new features
-3. 🔧 Submit pull requests
-4. ⭐ Star the repository
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
----
+## 📄 License
 
-## 👨‍💻 Developed by Arsh Verma
-
-*Full-Stack Digital Creator & Tech Gaming Technology Student at VIT Bhopal*
-
-I'm passionate about blending technical precision with creative vision to build exceptional digital experiences.
-
-<div align="center">
-
-[![Portfolio](https://img.shields.io/badge/🌐_Portfolio-Arsh_Creates-000000?style=for-the-badge)](https://arshcreates.vercel.app/)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Arsh_Verma-0077B5?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/arshvermadev/)
-[![X/Twitter](https://img.shields.io/badge/X-@TheArshVerma-000000?style=for-the-badge&logo=x)](https://x.com/TheArshVerma)
-[![Email](https://img.shields.io/badge/Email-Contact_Me-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:Arshverma.dev@gmail.com)
-
-</div>
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 📜 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
-<div align="center">
-
-### ⭐ **Loved SimplyPDF? Give it a Star!** ⭐
-
-*Built with ❤️ by [Arsh Verma](https://github.com/ArshVermaGit)*
-
-![Made with Love](https://img.shields.io/badge/Made_with-❤️-red?style=for-the-badge)
-![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge)
-
----
-
-**[⬆ Back to Top](#-simplypdf)**
-
-</div>
+<p align="center">
+  Made with ❤️ by Arsh Verma
+</p>
