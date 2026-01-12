@@ -53,6 +53,7 @@ export default function OCRPDFPage() {
 
         try {
             const pdfjsLib = await import("pdfjs-dist");
+            // Use the same worker version as the library
             const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
             pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -61,8 +62,6 @@ export default function OCRPDFPage() {
             const arrayBuffer = await file.arrayBuffer();
             const loadingTask = pdfjsLib.getDocument({
                 data: new Uint8Array(arrayBuffer),
-                useWorkerFetch: true,
-                isEvalSupported: false
             });
 
             const pdfDoc = await loadingTask.promise;
