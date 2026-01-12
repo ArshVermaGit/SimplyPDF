@@ -28,6 +28,37 @@ export default function JpgToPDFPage() {
             allowReorder={true}
             downloadFileName="images-to-pdf.pdf"
             historyAction="JPG to PDF"
+            howItWorks={{
+                title: "How to Convert JPG to PDF",
+                steps: [
+                    "Select one or multiple image files (JPG, PNG).",
+                    "Arrange your images in the desired order.",
+                    "Click 'Convert to PDF' to combine them into a single document."
+                ]
+            }}
+            benefits={{
+                title: "Image to Document",
+                items: [
+                    { title: "Combine Photos", desc: "Easily merge multiple photos into one shareable PDF file." },
+                    { title: "No Quality Loss", desc: "We maintain the original quality of your images during conversion." },
+                    { title: "Drag & Drop", desc: "Simply drag images from your desktop to arrange them." },
+                    { title: "Universal Viewer", desc: "PDFs can be opened on any device, unlike some raw image formats." }
+                ]
+            }}
+            faqs={[
+                {
+                    question: "Can I reorder pages?",
+                    answer: "Yes! After uploading, simply drag and drop the image thumbnails to change their order."
+                },
+                {
+                    question: "What image formats are supported?",
+                    answer: "We support the most common formats: JPG, JPEG, and PNG."
+                },
+                {
+                    question: "Is there a limit?",
+                    answer: "No, you can add as many images as you want to a single PDF document."
+                }
+            ]}
         />
     );
 }
