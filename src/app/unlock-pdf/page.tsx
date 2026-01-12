@@ -283,7 +283,7 @@ export default function UnlockPDFPage() {
                                                 </button>
                                                 <button
                                                     onClick={handleUnlock}
-                                                    className="flex-[2] btn-primary py-4 rounded-2xl flex items-center justify-center gap-2 group shadow-xl shadow-black/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                                    className="flex-2 btn-primary py-4 rounded-2xl flex items-center justify-center gap-2 group shadow-xl shadow-black/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
                                                 >
                                                     <Unlock className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                                                     <span className="font-bold">Unlock PDF</span>
