@@ -1,4 +1,4 @@
-import { PanInfo } from "framer-motion";
+
 
 interface ResizeHandleProps {
     isSelected: boolean;
