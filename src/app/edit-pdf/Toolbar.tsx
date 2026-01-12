@@ -1,4 +1,4 @@
-import { MousePointer2, Type, Image as ImageIcon, Pencil, Square, Circle, Minus, Plus, Hand, Undo, Redo, ChevronDown, Move, PenTool, Eraser, Stamp } from "lucide-react";
+import { MousePointer2, Type, Image as ImageIcon, Pencil, Square, Circle, Minus, Plus, Hand, Undo, Redo, ChevronDown, Move, PenTool, Eraser } from "lucide-react";
 import { motion } from "framer-motion";
 
 export type Tool = "select" | "hand" | "text" | "image" | "draw" | "shape" | "sign" | "eraser" | "stamp";
