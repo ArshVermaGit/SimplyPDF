@@ -29,13 +29,13 @@ export const AnimatedBackground = () => (
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.4 }}
             transition={{ duration: 1 }}
-            className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-gray-100 to-transparent rounded-full blur-3xl"
+            className="absolute top-0 right-0 w-[500px] h-[500px] bg-linear-to-bl from-gray-100 to-transparent rounded-full blur-3xl"
         />
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.25 }}
             transition={{ duration: 1, delay: 0.3 }}
-            className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-gray-50 to-transparent rounded-full blur-3xl"
+            className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-linear-to-tr from-gray-50 to-transparent rounded-full blur-3xl"
         />
         <motion.div
             initial={{ opacity: 0 }}
@@ -103,7 +103,7 @@ export function ToolHeader({ icon, title, description }: ToolHeaderProps) {
         >
             {icon && (
                 <motion.div
-                    className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-50 rounded-3xl mb-6 shadow-lg shadow-gray-200/50"
+                    className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-gray-100 to-gray-50 rounded-3xl mb-6 shadow-lg shadow-gray-200/50"
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ type: "spring", stiffness: 400 }}
                 >
@@ -140,7 +140,7 @@ export function ToolCard({ children, className = "" }: ToolCardProps) {
             transition={{ duration: 0.6, delay: 0.1 }}
             className={`relative ${className}`}
         >
-            <div className="absolute -inset-1 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded-[2rem] blur-xl opacity-50" />
+            <div className="absolute -inset-1 bg-linear-to-r from-gray-200 via-gray-100 to-gray-200 rounded-4xl blur-xl opacity-50" />
             <div className="relative bg-white rounded-3xl border border-gray-200/80 p-8 md:p-10 shadow-2xl shadow-gray-200/50">
                 {children}
             </div>
@@ -166,7 +166,7 @@ export function FeatureGrid() {
             {features.map((feature) => (
                 <motion.div
                     key={feature.label}
-                    className="group relative p-6 rounded-2xl bg-gradient-to-b from-gray-50 to-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-500"
+                    className="group relative p-6 rounded-2xl bg-linear-to-b from-gray-50 to-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-500"
                     whileHover={{ y: -5 }}
                 >
                     <span className="text-2xl mb-3 block">{feature.icon}</span>
