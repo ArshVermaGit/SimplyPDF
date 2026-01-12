@@ -100,14 +100,14 @@ If you have a suggestion that would make this better, please fork the repo and c
 
 <!-- AUTHOR -->
 
-## � Author
+## 👤 Author
 
 **Arsh Verma**
 
 - **Portfolio**: [arshcreates.vercel.app](https://arshcreates.vercel.app)
 - **GitHub**: [@ArshVermaGit](https://github.com/ArshVermaGit)
-- **LinkedIn**: [Arsh Verma](https://linkedin.com/in/arsh-verma)
-- **X (Twitter)**: [@TheArshVerma](https://twitter.com/TheArshVerma)
+- **LinkedIn**: [Arsh Verma](https://www.linkedin.com/in/arshvermadev/)
+- **X (Twitter)**: [@TheArshVerma](https://x.com/TheArshVerma)
 
 <!-- LICENSE -->
 
