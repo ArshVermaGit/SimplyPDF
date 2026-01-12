@@ -424,7 +424,43 @@ export default function PDFToExcelPage() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                <EducationalContent
+                    howItWorks={{
+                        title: "How to Convert PDF to Excel",
+                        steps: [
+                            "Upload any PDF containing tables or structured data.",
+                            "Our smart engine detects rows, columns, and tabular structures automatically.",
+                            "Review the data preview and download as Excel (.xlsx), CSV, or JSON."
+                        ]
+                    }}
+                    benefits={{
+                        title: "Unlock Your Data",
+                        items: [
+                            { title: "Smart Table Detection", desc: "We use advanced heuristic algorithms to accurately identify tables, even without visible borders." },
+                            { title: "Multiple Formats", desc: "Export your data to Excel for analysis, CSV for databases, or JSON for developers." },
+                            { title: "Privacy First", desc: "Processing happens on your device. We don't see your sensitive financial or business data." },
+                            { title: "Instant Preview", desc: "See exactly what data will be extracted before you download, ensuring 100% accuracy." }
+                        ]
+                    }}
+                    faqs={[
+                        {
+                            question: "Do I need to highlight the tables manually?",
+                            answer: "No! Our tool automatically scans the document structure to find and extract tabular data for you."
+                        },
+                        {
+                            question: "Can I convert bank statements?",
+                            answer: "Yes, this tool is perfect for bank statements, invoices, and reports. Since files stay on your device, it's completely secure."
+                        },
+                        {
+                            question: "What if my PDF is a scanned image?",
+                            answer: "If your PDF is just an image (no selectable text), try our 'OCR PDF' tool first to make the text recognizing, then use this tool."
+                        }
+                    ]}
+                />
             </div>
         </div>
     );
 }
+
+import { EducationalContent } from "@/components/EducationalContent";
