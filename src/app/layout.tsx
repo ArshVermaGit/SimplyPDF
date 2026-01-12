@@ -51,7 +51,7 @@ export default function RootLayout({
         />
         <Providers>
           <Header />
-          <main className="flex-grow">
+          <main className="grow">
             {children}
           </main>
           <Footer />
