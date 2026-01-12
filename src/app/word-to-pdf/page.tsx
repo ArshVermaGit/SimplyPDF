@@ -324,7 +324,43 @@ export default function WordToPDFPage() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                <EducationalContent
+                    howItWorks={{
+                        title: "How to Convert Word to PDF",
+                        steps: [
+                            "Upload your Word document (.docx) or text file (.txt).",
+                            "Our converter instantly transforms it into a professional PDF.",
+                            "Download your new PDF document, ready for sharing."
+                        ]
+                    }}
+                    benefits={{
+                        title: "Professional Documents",
+                        items: [
+                            { title: "Universal Compatibility", desc: "PDFs look the same on every device. No more broken formatting when sending resumes or contracts." },
+                            { title: "Instant Conversion", desc: "Get high-quality PDFs in milliseconds. No software installation required." },
+                            { title: "Privacy Guaranteed", desc: "Your documents are converted locally. We never see or store your files." },
+                            { title: "Supports .txt & .docx", desc: "Easily convert both simple text notes and complex Word documents." }
+                        ]
+                    }}
+                    faqs={[
+                        {
+                            question: "Does it preserve fonts?",
+                            answer: "We use standard fonts to ensure your PDF looks professional and clean on any system."
+                        },
+                        {
+                            question: "Why convert to PDF?",
+                            answer: "PDFs are secure, uneditable by default, and look professional. They are the standard for invoices, resumes, and legal docs."
+                        },
+                        {
+                            question: "Can I convert back to Word?",
+                            answer: "Yes! If you need to edit the PDF later, simply use our 'PDF to Word' tool."
+                        }
+                    ]}
+                />
             </div>
         </div>
     );
 }
+
+import { EducationalContent } from "@/components/EducationalContent";
