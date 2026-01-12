@@ -464,7 +464,7 @@ export default function SplitPDFPage() {
                                                             <div key={page.pageNumber} className="relative group flex flex-col items-center">
                                                                 <motion.div
                                                                     whileHover={{ y: -4 }}
-                                                                    className={`relative aspect-[3/4] w-full rounded-xl border-2 transition-all duration-300 shadow-sm overflow-hidden ${mode === "select"
+                                                                    className={`relative aspect-3/4 w-full rounded-xl border-2 transition-all duration-300 shadow-sm overflow-hidden ${mode === "select"
                                                                         ? page.selected
                                                                             ? "border-black ring-4 ring-black/5"
                                                                             : "border-gray-200 opacity-60 grayscale-[0.5]"
