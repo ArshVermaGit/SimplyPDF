@@ -42,7 +42,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body className={`${inter.variable} ${greatVibes.variable} ${alexBrush.variable} font-sans antialiased min-h-screen flex flex-col`}>
+      <body 
+        suppressHydrationWarning
+        className={`${inter.variable} ${greatVibes.variable} ${alexBrush.variable} font-sans antialiased min-h-screen flex flex-col`}
+      >
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4266443141083729"
