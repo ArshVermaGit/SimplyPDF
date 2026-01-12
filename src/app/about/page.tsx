@@ -74,11 +74,11 @@ export default function AboutPage() {
                     >
                         <div className="relative w-full max-w-md mx-auto aspect-square">
                             {/* Decorative elements */}
-                            <div className="absolute -inset-4 bg-gradient-to-br from-gray-200 via-gray-100 to-white rounded-[2.5rem] -rotate-3" />
-                            <div className="absolute -inset-4 bg-gradient-to-tr from-gray-100 via-white to-gray-50 rounded-[2.5rem] rotate-2 opacity-80" />
+                            <div className="absolute -inset-4 bg-linear-to-br from-gray-200 via-gray-100 to-white rounded-5xl -rotate-3" />
+                            <div className="absolute -inset-4 bg-linear-to-tr from-gray-100 via-white to-gray-50 rounded-5xl rotate-2 opacity-80" />
 
                             {/* Main photo container */}
-                            <div className="relative rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white">
+                            <div className="relative rounded-4xl overflow-hidden shadow-2xl border-4 border-white">
                                 <Image
                                     src="/arsh-verma.jpg"
                                     alt="Arsh Verma"
