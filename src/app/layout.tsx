@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Providers } from "@/components/Providers";
+import SignInModal from "@/components/SignInModal";
 import Script from "next/script";
 
 const inter = Inter({
@@ -54,6 +55,7 @@ export default function RootLayout({
         />
         <Providers>
           <Header />
+          <SignInModal />
           <main className="grow">
             {children}
           </main>
