@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthProvider";
 
 export default function SignInModal() {
     const [isOpen, setIsOpen] = useState(false);
-    const { user, login } = useAuth();
+    const { user, login, isLoading } = useAuth();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -17,6 +17,9 @@ export default function SignInModal() {
     }, []);
 
     useEffect(() => {
+        // Don't do anything if we are still checking auth status
+        if (isLoading) return;
+
         // Check if user has already dismissed the modal
         const hasDismissed = localStorage.getItem("simplypdf_signin_dismissed");
         
@@ -27,7 +30,7 @@ export default function SignInModal() {
             }, 3000);
             return () => clearTimeout(timer);
         }
-    }, [user]);
+    }, [user, isLoading]);
 
     const handleDismiss = () => {
         setIsOpen(false);
