@@ -192,10 +192,10 @@ export default function PrivacyPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 mb-12"
+                    className="bg-linear-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 mb-12"
                 >
                     <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-green-500 text-white rounded-xl flex items-center justify-center flex-shrink-0">
+                        <div className="w-12 h-12 bg-green-500 text-white rounded-xl flex items-center justify-center shrink-0">
                             <Lock className="w-6 h-6" />
                         </div>
                         <div>
@@ -217,7 +217,7 @@ export default function PrivacyPage() {
                     className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-12"
                 >
                     <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-blue-500 text-white rounded-xl flex items-center justify-center flex-shrink-0">
+                        <div className="w-12 h-12 bg-blue-500 text-white rounded-xl flex items-center justify-center shrink-0">
                             <Eye className="w-6 h-6" />
                         </div>
                         <div>
@@ -250,7 +250,7 @@ export default function PrivacyPage() {
                             className="bg-white rounded-2xl border border-gray-100 p-8 hover:border-gray-200 hover:shadow-lg transition-all duration-300"
                         >
                             <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
                                     <section.icon className="w-6 h-6" />
                                 </div>
                                 <div className="flex-1">
