@@ -40,6 +40,31 @@ export default function WordToPDFPage() {
         }
     };
 
+    const sanitizeText = (text: string): string => {
+        // Map common non-WinAnsi characters to their equivalents
+        const charMap: { [key: string]: string } = {
+            "→": "->",
+            "←": "<-",
+            "↔": "<->",
+            "↑": "^",
+            "↓": "v",
+            "™": "(TM)",
+            "©": "(c)",
+            "®": "(r)",
+            "\u2013": "-", // en dash (–)
+            "\u2014": "--", // em dash (—)
+            "\u2018": "'", // left single quote (‘)
+            "\u2019": "'", // right single quote (’)
+            "\u201C": '"', // left double quote (“)
+            "\u201D": '"', // right double quote (”)
+            "\u2022": "*", // bullet (•)
+            "\u2026": "...", // ellipsis (…)
+            "\u20AC": "EUR", // euro
+        };
+
+        return text.replace(/[^\x00-\x7F\u00A0-\u00FF]/g, (char) => charMap[char] || "?");
+    };
+
     const handleConvert = async () => {
         if (!file) return;
         setStatus("processing");
@@ -60,6 +85,9 @@ export default function WordToPDFPage() {
             } else {
                 throw new Error("Unsupported file format. Please use .docx or .txt files.");
             }
+
+            // Sanitize text for PDF encoding
+            textContent = sanitizeText(textContent);
 
             // Create PDF from text
             const pdf = await PDFDocument.create();
