@@ -13,13 +13,13 @@ const BackgroundDecoration = () => (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.4 }}
-            className="absolute top-20 right-10 w-[400px] h-[400px] bg-gradient-to-bl from-gray-100 to-transparent rounded-full blur-3xl"
+            className="absolute top-20 right-10 w-[400px] h-[400px] bg-linear-to-bl from-gray-100 to-transparent rounded-full blur-3xl"
         />
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.3 }}
             transition={{ delay: 0.2 }}
-            className="absolute bottom-20 left-10 w-[300px] h-[300px] bg-gradient-to-tr from-gray-50 to-transparent rounded-full blur-3xl"
+            className="absolute bottom-20 left-10 w-[300px] h-[300px] bg-linear-to-tr from-gray-50 to-transparent rounded-full blur-3xl"
         />
     </div>
 );
@@ -69,7 +69,7 @@ export default function HistoryPage() {
                     className="container mx-auto max-w-2xl text-center"
                 >
                     <motion.div
-                        className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-gray-200/50"
+                        className="w-24 h-24 bg-linear-to-br from-gray-100 to-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-gray-200/50"
                         initial={{ scale: 0.8, rotate: -10 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ type: "spring", stiffness: 200 }}
@@ -130,10 +130,10 @@ export default function HistoryPage() {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="text-center py-20 bg-gradient-to-b from-gray-50 to-white rounded-3xl border border-gray-100"
+                        className="text-center py-20 bg-linear-to-b from-gray-50 to-white rounded-3xl border border-gray-100"
                     >
                         <motion.div
-                            className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                            className="w-20 h-20 bg-linear-to-br from-gray-100 to-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-6"
                             animate={{ y: [0, -10, 0] }}
                             transition={{ duration: 3, repeat: Infinity }}
                         >
@@ -159,7 +159,7 @@ export default function HistoryPage() {
                         className="space-y-3"
                     >
                         {/* Timeline line */}
-                        <div className="absolute left-8 top-48 bottom-32 w-px bg-gradient-to-b from-gray-200 via-gray-300 to-transparent hidden md:block" />
+                        <div className="absolute left-8 top-48 bottom-32 w-px bg-linear-to-b from-gray-200 via-gray-300 to-transparent hidden md:block" />
 
                         <AnimatePresence>
                             {history.map((item: HistoryItem) => (
@@ -175,7 +175,7 @@ export default function HistoryPage() {
                                     <div className="bg-white border border-gray-100 rounded-2xl p-5 hover:border-gray-200 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-500 group-hover:-translate-y-1">
                                         <div className="flex items-start gap-4">
                                             {/* Icon */}
-                                            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-black group-hover:text-white transition-colors duration-300">
+                                            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-black group-hover:text-white transition-colors duration-300">
                                                 <FileText className="w-6 h-6" />
                                             </div>
 
