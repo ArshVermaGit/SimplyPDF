@@ -15,13 +15,14 @@ interface User {
 interface AuthContextType {
     user: User | null;
     login: (credentialResponse: CredentialResponse) => void;
-    logout: () => void;
+    isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Initialize from local storage
     useEffect(() => {
@@ -29,14 +30,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (storedUser) {
             try {
                 const parsed = JSON.parse(storedUser);
-                setTimeout(() => {
-                    setUser(parsed);
-                }, 0);
+                // No need for setTimeout(..., 0) which causes flicker, just set it
+                setUser(parsed);
             } catch (e) {
                 console.error("Failed to parse stored user", e);
                 localStorage.removeItem("simplypdf_user");
             }
         }
+        setIsLoading(false);
     }, []);
 
     const login = (credentialResponse: CredentialResponse) => {
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout }}>
+        <AuthContext.Provider value={{ user, login, logout, isLoading }}>
             {children}
         </AuthContext.Provider>
     );
