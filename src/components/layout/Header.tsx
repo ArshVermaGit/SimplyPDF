@@ -17,6 +17,12 @@ import {
   Unlock,
   Layers,
   Stamp,
+  FileSignature,
+  Type,
+  ScanLine,
+  FileText,
+  FileUp,
+  FileDown,
   ChevronDown,
   History,
   LogOut,
@@ -34,6 +40,12 @@ const tools = [
   { title: "Protect", icon: Lock, href: "/protect-pdf" },
   { title: "Organize", icon: Layers, href: "/organize-pdf" },
   { title: "Watermark", icon: Stamp, href: "/watermark-pdf" },
+  { title: "Sign", icon: FileSignature, href: "/sign-pdf" },
+  { title: "Edit", icon: Type, href: "/edit-pdf" },
+  { title: "OCR", icon: ScanLine, href: "/ocr-pdf" },
+  { title: "PDF to Word", icon: FileText, href: "/pdf-to-word" },
+  { title: "Word to PDF", icon: FileUp, href: "/word-to-pdf" },
+  { title: "PDF to Excel", icon: FileDown, href: "/pdf-to-excel" },
 ];
 
 export default function Header() {
@@ -104,7 +116,7 @@ export default function Header() {
                     transition={{ duration: 0.2 }}
                     className="absolute top-full left-1/2 -translate-x-1/2 pt-4"
                   >
-                    <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 w-[480px] grid grid-cols-2 gap-2">
+                    <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 w-[640px] grid grid-cols-3 gap-2">
                       {tools.map((tool) => (
                         <Link
                           key={tool.href}
