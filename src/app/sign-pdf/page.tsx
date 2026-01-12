@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     Upload, File, X, Download, CheckCircle2, RefreshCw, 
@@ -185,7 +185,7 @@ export default function SignPDFPage() {
         }
     };
 
-    const getSignatureDataUrl = (): string | null => {
+    const getSignatureDataUrl = useCallback((): string | null => {
         if (signatureMode === "draw") {
             return canvasRef.current?.toDataURL("image/png") || null;
         } else if (signatureMode === "type" && signatureText) {
@@ -204,12 +204,12 @@ export default function SignPDFPage() {
             return signatureImage;
         }
         return null;
-    };
+    }, [signatureMode, signatureText, signatureImage, signatureColor]);
 
     useEffect(() => {
         const url = getSignatureDataUrl();
         setSignaturePreviewUrl(url);
-    }, [signatureMode, signatureText, signatureImage, hasDrawn, signatureColor, drawCounter]);
+    }, [getSignatureDataUrl, hasDrawn, drawCounter]);
 
     const [signatureSize, setSignatureSize] = useState({ width: 150, height: 60 });
     const [isDragging, setIsDragging] = useState(false);
@@ -747,10 +747,12 @@ export default function SignPDFPage() {
                                                             className="absolute inset-0 flex items-center justify-center p-2 overflow-hidden pointer-events-none"
                                                         >
                                                             {signaturePreviewUrl ? (
-                                                                <img 
+                                                                <Image 
                                                                     src={signaturePreviewUrl} 
                                                                     alt="Preview" 
-                                                                    className="max-w-full max-h-full object-contain pointer-events-none"
+                                                                    fill
+                                                                    className="object-contain pointer-events-none"
+                                                                    unoptimized
                                                                 />
                                                             ) : (
                                                                 <div 
