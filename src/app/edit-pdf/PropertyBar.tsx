@@ -1,4 +1,4 @@
-import { Bold, Italic, AlignLeft, AlignCenter, AlignRight, Trash2, Type, Palette } from "lucide-react";
+import { Trash2, Type } from "lucide-react";
 
 interface PropertyBarProps {
     selectedAnnotationId: string | null;
@@ -11,7 +11,7 @@ interface PropertyBarProps {
         opacity?: number;
         textAlign?: "left" | "center" | "right";
     };
-    onUpdate: (key: string, value: any) => void;
+    onUpdate: (key: string, value: string | number) => void;
     onDelete: () => void;
 }
 
