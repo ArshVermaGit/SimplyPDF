@@ -54,7 +54,7 @@ export default function Header() {
   const [showTools, setShowTools] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const { user, login, logout } = useAuth();
+  const { user, login, logout, isLoading } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -151,7 +151,10 @@ export default function Header() {
 
           {/* Auth Section */}
           <div className="hidden lg:flex items-center gap-4">
-            {user ? (
+            {/* Show skeleton while checking auth status */}
+            {isLoading ? (
+               <div className="w-9 h-9 rounded-full bg-gray-100 animate-pulse" />
+            ) : user ? (
               // Logged in - User dropdown
               <div className="relative" ref={userMenuRef}>
                 <button
@@ -219,7 +222,7 @@ export default function Header() {
               </div>
             ) : (
               // Not logged in - Google Sign In button
-              <div className="google-login-wrapper">
+              <div className="google-login-wrapper min-w-[100px] min-h-[40px] flex items-center justify-center">
                 <GoogleLogin
                   onSuccess={login}
                   onError={() => console.log("Login Failed")}
