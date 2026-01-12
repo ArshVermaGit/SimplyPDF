@@ -2,14 +2,14 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useRef, useEffect } from "react";
-// import { motion, AnimatePresence } from "framer-motion"; // Unused
+import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Upload, Download, CheckCircle2, ChevronLeft, ChevronRight, MousePointer2 } from "lucide-react";
 import { PDFDocument, rgb, StandardFonts, LineCapStyle } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 import {
     AnimatedBackground,
-    // FloatingDecorations,
+    FloatingDecorations,
     ToolHeader,
     ToolCard,
     ProcessingState
@@ -18,18 +18,13 @@ import { useHistory } from "@/context/HistoryContext";
 import Image from "next/image";
 import { Toolbar, Tool, ShapeType } from "./Toolbar";
 import { PropertyBar } from "./PropertyBar";
-
-// Helper to draw arrow head
-// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-const drawArrowHead = (ctx: any, from: { x: number, y: number }, to: { x: number, y: number }, color: any, size: number) => {
-   // Logic handled in pdf-lib usually by drawing a triangle/polygon at the end
-   // This will be implemented in the save function
-};
+import { SignatureModal } from "./SignatureModal";
+import { ResizeHandle } from "./ResizeHandle";
 
 interface Annotation {
     id: string;
-    type: "text" | "draw" | "shape" | "image";
-    shapeType?: ShapeType; // For 'shape' type
+    type: "text" | "draw" | "shape" | "image" | "sign";
+    shapeType?: ShapeType;
     page: number;
     x: number;
     y: number;
@@ -43,31 +38,41 @@ interface Annotation {
     rotation?: number;
     fontFamily?: string;
     path?: { x: number; y: number }[];
-    isBatch?: boolean;
     endX?: number; // For lines/arrows
     endY?: number; // For lines/arrows
 }
 
 export default function EditPDFPage() {
     const { addToHistory } = useHistory();
+    // File & PDF State
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<"idle" | "editing" | "processing" | "success" | "error">("idle");
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [errorMessage, setErrorMessage] = useState("");
     const [dragActive, setDragActive] = useState(false);
+    
+    // Preview Management
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [pageImages, setPageImages] = useState<string[]>([]);
     const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number }[]>([]);
     
-    // Toolkit State
+    // Tools
     const [selectedTool, setSelectedTool] = useState<Tool>("select");
     const [activeShape, setActiveShape] = useState<ShapeType>("rectangle");
-    const [annotations, setAnnotations] = useState<Annotation[]>([]);
-    const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
     const [zoom, setZoom] = useState(1);
     
+    // Data & History
+    const [annotations, setAnnotations] = useState<Annotation[]>([]);
+    const [history, setHistory] = useState<Annotation[][]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
+    
+    // Selection & Editing
+    const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+    const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+    const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
+
     // Default Styles
     const [defaults, setDefaults] = useState({
         color: "#000000",
@@ -77,36 +82,52 @@ export default function EditPDFPage() {
         opacity: 1
     });
 
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
-    const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
-    
-    // Refs
+    // Refs for interaction
     const workspaceRef = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null); // For scrolling
+    const containerRef = useRef<HTMLDivElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
-    const startPos = useRef({ x: 0, y: 0 }); // Start position for shapes/drag
+    const startPos = useRef({ x: 0, y: 0 });
     const dragOffset = useRef({ x: 0, y: 0 });
-    
-    // Operation States
-    const [isCreating, setIsCreating] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-    const [isResizing, setIsResizing] = useState(false);
-    // const [isRotating, setIsRotating] = useState(false); // Unused for now
-    const [isPanning, setIsPanning] = useState(false);
-    
-    // Load PDF
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = e.target.files?.[0] || null;
-        if (selectedFile) processFile(selectedFile);
-    };
+    const interactionStart = useRef<{x: number, y: number, initialAnnotations: Annotation[]} | null>(null);
+    const activeOperation = useRef<"draw" | "create" | "move" | "resize" | "pan" | null>(null);
+    const resizeHandle = useRef<string | null>(null);
 
-    const handleDrop = async (e: React.DragEvent) => {
-        e.preventDefault();
-        setDragActive(false);
-        const droppedFile = e.dataTransfer.files[0];
-        if (droppedFile?.type === "application/pdf") processFile(droppedFile);
-    };
+    // Temp drawing path
+    const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
+
+    // --- History Logic ---
+    const addToUndo = useCallback((newAnnotations: Annotation[]) => {
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push(newAnnotations);
+        setHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+        setAnnotations(newAnnotations);
+    }, [history, historyIndex]);
+
+    const handleUndo = useCallback(() => {
+        if (historyIndex > 0) {
+            setHistoryIndex(historyIndex - 1);
+            setAnnotations(history[historyIndex - 1]);
+        }
+    }, [history, historyIndex]);
+
+    const handleRedo = useCallback(() => {
+        if (historyIndex < history.length - 1) {
+            setHistoryIndex(historyIndex + 1);
+            setAnnotations(history[historyIndex + 1]);
+        }
+    }, [history, historyIndex]);
+    
+    // Init History on first edit
+    useEffect(() => {
+        if (history.length === 0 && annotations.length > 0) {
+            setHistory([[]]); // Initial empty state
+            setHistoryIndex(0);
+        }
+    }, [annotations.length, history.length]);
+
+
+    // --- File Handling ---
 
     const processFile = async (pdfFile: File) => {
         setFile(pdfFile);
@@ -122,7 +143,6 @@ export default function EditPDFPage() {
             const images: string[] = [];
             const dimensions: { width: number; height: number }[] = [];
 
-            // Render pages
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const viewport = page.getViewport({ scale: 1.5 });
@@ -131,12 +151,16 @@ export default function EditPDFPage() {
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
                 await page.render({ canvasContext: context, viewport }).promise;
-                images.push(canvas.toDataURL("image/jpeg", 0.8)); // slightly compressed for speed
+                images.push(canvas.toDataURL("image/jpeg", 0.8));
                 dimensions.push({ width: viewport.width, height: viewport.height });
             }
             setPageImages(images);
             setPageDimensions(dimensions);
             setStatus("editing");
+            
+            // Start history
+            setHistory([[]]);
+            setHistoryIndex(0);
         } catch (error) {
             console.error(error);
             setErrorMessage("Failed to load PDF.");
@@ -156,10 +180,9 @@ export default function EditPDFPage() {
                     page: currentPage,
                     x: 10, y: 10, width: 20, height: 20,
                     content,
-                    color: "transparent",
-                    opacity: 1
+                    color: "transparent", opacity: 1
                 };
-                setAnnotations(prev => [...prev, annotation]);
+                addToUndo([...annotations, annotation]);
                 setSelectedAnnotationId(annotation.id);
                 setSelectedTool("select");
             };
@@ -167,11 +190,27 @@ export default function EditPDFPage() {
         }
     };
 
+    const handleSignatureSave = (dataUrl: string) => {
+        const annotation: Annotation = {
+            id: `sign-${Date.now()}`,
+            type: "sign",
+            page: currentPage,
+            x: 10, y: 10, width: 20, height: 10,
+            content: dataUrl,
+            color: "transparent", opacity: 1
+        };
+        addToUndo([...annotations, annotation]);
+        setSelectedAnnotationId(annotation.id);
+        setSelectedTool("select");
+    };
+
     useEffect(() => {
         if (selectedTool === "image") imageInputRef.current?.click();
+        if (selectedTool === "sign") setIsSignatureModalOpen(true);
     }, [selectedTool]);
 
-    // --- Interaction Handlers ---
+
+    // --- Interaction ---
 
     const getRelativeCoords = (e: React.MouseEvent | MouseEvent) => {
         if (!workspaceRef.current) return { x: 0, y: 0 };
@@ -188,19 +227,26 @@ export default function EditPDFPage() {
         startPos.current = { x, y };
 
         if (selectedTool === "hand") {
-            setIsPanning(true);
+            activeOperation.current = "pan";
+            return;
+        }
+
+        // Eraser logic
+        if (selectedTool === "eraser") {
+            // Check if we hit an annotation? handled by annotation click usually, 
+            // but for 'stroke' eraser we might want to just drag
+            // For now, click eraser is safer.
             return;
         }
 
         if (selectedTool === "select") {
-            // If checking selection on blank space, deselect
-            // Note: Clicking ON an annotation is handled by its own onMouseDown
+            // Deselect if clicking empty space
             setSelectedAnnotationId(null);
             return;
         }
 
         if (selectedTool === "draw") {
-            setIsDrawing(true);
+            activeOperation.current = "draw";
             setCurrentPath([{ x, y }]);
             setSelectedAnnotationId(null);
             return;
@@ -220,15 +266,15 @@ export default function EditPDFPage() {
                 opacity: defaults.opacity,
                 rotation: 0
              };
-             setAnnotations(prev => [...prev, annotation]);
+             addToUndo([...annotations, annotation]);
              setSelectedAnnotationId(newId);
-             setEditingAnnotationId(newId); // Immediately focus
-             setSelectedTool("select"); // Switch back to select after placement
+             setEditingAnnotationId(newId);
+             setSelectedTool("select");
              return;
         }
 
         if (selectedTool === "shape") {
-            setIsCreating(true);
+            activeOperation.current = "create";
             const newId = `shape-${Date.now()}`;
             const annotation: Annotation = {
                 id: newId,
@@ -236,14 +282,16 @@ export default function EditPDFPage() {
                 shapeType: activeShape,
                 page: currentPage,
                 x, y,
-                width: 0, height: 0, // Rect/Circle
-                endX: x, endY: y,   // Line/Arrow
+                width: 0, height: 0,
+                endX: x, endY: y,
                 color: defaults.color,
                 strokeWidth: defaults.strokeWidth,
                 opacity: defaults.opacity,
                 rotation: 0
             };
-            setAnnotations(prev => [...prev, annotation]);
+            setAnnotations(prev => [...prev, annotation]); // Temporary state, finalize on up only?
+            // Actually better to manipulate state directly for fluid UI, push to history on UP
+            interactionStart.current = { x, y, initialAnnotations: [...annotations] }; // Backup for cancel?
             setSelectedAnnotationId(newId);
         }
     };
@@ -252,24 +300,23 @@ export default function EditPDFPage() {
         if (!workspaceRef.current) return;
         const { x, y } = getRelativeCoords(e);
 
-        if (isPanning && containerRef.current) {
+        if (activeOperation.current === "pan" && containerRef.current) {
             containerRef.current.scrollLeft -= e.movementX;
             containerRef.current.scrollTop -= e.movementY;
             return;
         }
 
-        if (isDrawing) {
+        if (activeOperation.current === "draw") {
             setCurrentPath(prev => [...prev, { x, y }]);
             return;
         }
 
-        if (isCreating && selectedAnnotationId) {
+        if (activeOperation.current === "create" && selectedAnnotationId) {
             setAnnotations(prev => prev.map(a => {
                 if (a.id === selectedAnnotationId) {
                     if (a.shapeType === "line" || a.shapeType === "arrow") {
                         return { ...a, endX: x, endY: y };
-                    } 
-                    // Rectangle / Circle
+                    }
                     return {
                         ...a,
                         x: Math.min(x, startPos.current.x),
@@ -283,35 +330,23 @@ export default function EditPDFPage() {
             return;
         }
 
-        if (isDragging && selectedAnnotationId) {
+        if (activeOperation.current === "move" && selectedAnnotationId) {
+             const rect = workspaceRef.current!.getBoundingClientRect();
+             const rx = ((e.clientX - rect.left) / rect.width) * 100;
+             const ry = ((e.clientY - rect.top) / rect.height) * 100;
+             setAnnotations(prev => prev.map(a => a.id === selectedAnnotationId ? { ...a, x: rx - dragOffset.current.x, y: ry - dragOffset.current.y } : a));
+        }
+        
+        if (activeOperation.current === "resize" && selectedAnnotationId) {
+            // Simplified resizing logic based on handle
             setAnnotations(prev => prev.map(a => {
                 if (a.id === selectedAnnotationId) {
-                    // Logic to move line/arrow as a group? or just start point?
-                    // For simplicity, implement box-model dragging for everything currently
-                    // Would require delta logic for multi-point shapes
-                    // const dx = x - startPos.current.x; // Unused
-                    // Let's use simple positioning
-                     // Re-calculate based on offset
-                    const rect = workspaceRef.current!.getBoundingClientRect();
-                    const rx = ((e.clientX - rect.left) / rect.width) * 100;
-                    const ry = ((e.clientY - rect.top) / rect.height) * 100;
-                    
-                    return { 
-                        ...a, 
-                        x: rx - dragOffset.current.x,
-                        y: ry - dragOffset.current.y
-                    };
-                }
-                return a;
-            }));
-        }
-
-        if (isResizing && selectedAnnotationId) {
-             // Basic resizing logic
-             setAnnotations(prev => prev.map(a => {
-                if (a.id === selectedAnnotationId) {
-                    const w = Math.abs(x - a.x);
-                    const h = Math.abs(y - a.y);
+                    const { x: ax, y: ay } = a;
+                    // Logic would depend on which handle (nw, ne, sw, se)
+                    // For brevity, basic resize from bottom-right (se) or just width/height
+                    // A full implementation requires tracking handle type
+                    const w = Math.max(1, Math.abs(x - ax));
+                    const h = Math.max(1, Math.abs(y - ay));
                     return { ...a, width: w, height: h };
                 }
                 return a;
@@ -320,138 +355,160 @@ export default function EditPDFPage() {
     };
 
     const handleMouseUp = () => {
-        if (isDrawing) {
+        if (activeOperation.current === "draw") {
             if (currentPath.length > 1) {
                 const annotation: Annotation = {
                     id: `draw-${Date.now()}`,
                     type: "draw",
                     page: currentPage,
-                    x: 0, y: 0, // Path contains coords
+                    x: 0, y: 0,
                     color: defaults.color,
                     path: currentPath,
                     strokeWidth: defaults.strokeWidth,
                     opacity: defaults.opacity
                 };
-                setAnnotations(prev => [...prev, annotation]);
+                addToUndo([...annotations, annotation]);
             }
-            setIsDrawing(false);
             setCurrentPath([]);
+        } else if (activeOperation.current === "create" || activeOperation.current === "move" || activeOperation.current === "resize") {
+            // Commit change to history
+            addToUndo(annotations); 
         }
-        
-        setIsCreating(false);
-        // setIsRotate(false); // Unused
-        setIsResizing(false);
-        setIsDragging(false);
-        setIsPanning(false);
 
-        // If we just finished creating a shape, switch to select
-        if (isCreating) setSelectedTool("select");
-    };
+        const wasCreating = activeOperation.current === "create";
 
-    // --- Property Updates ---
+        activeOperation.current = null;
+        resizeHandle.current = null;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateProperty = (key: string, value: any) => {
-        setDefaults(prev => ({ ...prev, [key]: value })); // Update defaults for next item
-        if (selectedAnnotationId) {
-            setAnnotations(prev => prev.map(a => a.id === selectedAnnotationId ? { ...a, [key]: value } : a));
-        }
+        if (wasCreating) setSelectedTool("select");
     };
     
-    // --- PDF Generation ---
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+                e.preventDefault();
+                handleUndo();
+            }
+            if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
+                e.preventDefault();
+                handleRedo();
+            }
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                if (selectedAnnotationId && !editingAnnotationId) {
+                    addToUndo(annotations.filter(a => a.id !== selectedAnnotationId));
+                    setSelectedAnnotationId(null);
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [annotations, selectedAnnotationId, editingAnnotationId, handleUndo, handleRedo, addToUndo]); // Deps for closure
 
+    // --- Annotation Click Handlers ---
+    
+    const handleAnnotationMouseDown = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (selectedTool === "eraser") {
+            addToUndo(annotations.filter(a => a.id !== id));
+            return;
+        }
+        
+        setSelectedAnnotationId(id);
+        if (selectedTool === "select") {
+            activeOperation.current = "move";
+            if (workspaceRef.current) {
+                // Calculate offset
+                const rect = workspaceRef.current.getBoundingClientRect();
+                const rx = ((e.clientX - rect.left) / rect.width) * 100;
+                const ry = ((e.clientY - rect.top) / rect.height) * 100;
+                const a = annotations.find(ann => ann.id === id);
+                if (a) dragOffset.current = { x: rx - a.x, y: ry - a.y };
+            }
+        }
+    };
+
+
+    // --- PDF Generation --- (Same as before, abbreviated)
     const handleSave = async () => {
-        if (!file) return;
-        setStatus("processing");
-        try {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await PDFDocument.load(arrayBuffer);
-            const font = await pdf.embedFont(StandardFonts.Helvetica);
+         if (!file) return;
+         setStatus("processing");
+         try {
+             const arrayBuffer = await file.arrayBuffer();
+             const pdf = await PDFDocument.load(arrayBuffer);
+             const font = await pdf.embedFont(StandardFonts.Helvetica);
 
-            for (const anno of annotations) {
+             for (const anno of annotations) {
                  const page = pdf.getPage(anno.page);
                  const { width, height } = page.getSize();
-                 
-                 const colorHex = anno.color === "transparent" ? "#000000" : anno.color;
-                 const r = parseInt(colorHex.slice(1, 3), 16) / 255;
-                 const g = parseInt(colorHex.slice(3, 5), 16) / 255;
-                 const b = parseInt(colorHex.slice(5, 7), 16) / 255;
-                 const color = rgb(r, g, b);
+                 const color = anno.color === "transparent" ? undefined : rgb(
+                    parseInt(anno.color.slice(1, 3), 16) / 255,
+                    parseInt(anno.color.slice(3, 5), 16) / 255,
+                    parseInt(anno.color.slice(5, 7), 16) / 255
+                 );
                  const opacity = anno.opacity ?? 1;
 
-                 if (anno.type === "text" && anno.content) {
+                 if (anno.type === "text" && anno.content && color) {
                      page.drawText(anno.content, {
-                         x: (anno.x / 100) * width,
-                         y: height - (anno.y / 100) * height,
-                         size: anno.fontSize || 14,
-                         font,
-                         color,
-                         opacity
+                         x: (anno.x/100)*width, y: height - (anno.y/100)*height,
+                         size: anno.fontSize, font, color, opacity
                      });
-                 }
-                 else if (anno.type === "shape") {
-                     if (anno.shapeType === "rectangle") {
+                 } else if (anno.type === "image" || anno.type === "sign") {
+                     if (anno.content) {
+                         const imgBytes = await fetch(anno.content).then(res => res.arrayBuffer());
+                         let img;
+                         if (anno.content.includes("image/png")) img = await pdf.embedPng(imgBytes);
+                         else img = await pdf.embedJpg(imgBytes);
+                         
+                         page.drawImage(img, {
+                             x: (anno.x/100)*width,
+                             y: height - (anno.y/100)*height - ((anno.height||0)/100)*height,
+                             width: ((anno.width||0)/100)*width,
+                             height: ((anno.height||0)/100)*height,
+                             opacity
+                         });
+                     }
+                 } else if (anno.type === "shape" && color) {
+                    if (anno.shapeType === "rectangle") {
                          page.drawRectangle({
                              x: (anno.x / 100) * width,
                              y: height - (anno.y / 100) * height - ((anno.height||0)/100)*height,
                              width: ((anno.width||0)/100)*width,
                              height: ((anno.height||0)/100)*height,
-                             color: anno.color === "transparent" ? undefined : color,
+                             color: undefined,
                              borderColor: color,
                              borderWidth: anno.strokeWidth || 2,
                              opacity
                          });
-                     } else if (anno.shapeType === "line" && anno.endX !== undefined) {
+                     } else if ((anno.shapeType === "line" || anno.shapeType === "arrow") && anno.endX !== undefined) {
                          page.drawLine({
                              start: { x: (anno.x/100)*width, y: height - (anno.y/100)*height },
                              end: { x: (anno.endX/100)*width, y: height - (anno.endY!/100)*height },
-                             thickness: anno.strokeWidth || 2,
-                             color,
-                             opacity
+                             thickness: anno.strokeWidth || 2, color, opacity
                          });
-                     } else if (anno.shapeType === "arrow" && anno.endX !== undefined) {
-                          // Draw line
-                          const start = { x: (anno.x/100)*width, y: height - (anno.y/100)*height };
-                          const end = { x: (anno.endX/100)*width, y: height - (anno.endY!/100)*height };
-                          
-                          page.drawLine({
-                             start,
-                             end,
-                             thickness: anno.strokeWidth || 2,
-                             color,
-                             opacity
-                         });
-                         
-                         // Simple arrowhead math
-                         // (Stub for now - a real implementation would calculate vector angle)
                      }
-                 }
-                 else if (anno.type === "draw" && anno.path) {
-                     // Draw path using drawLine segments
+                 } else if (anno.type === "draw" && anno.path && color) {
                      for(let i=0; i<anno.path.length-1; i++) {
                          const p1 = anno.path[i];
                          const p2 = anno.path[i+1];
                          page.drawLine({
                              start: { x: (p1.x/100)*width, y: height - (p1.y/100)*height },
                              end: { x: (p2.x/100)*width, y: height - (p2.y/100)*height },
-                             thickness: anno.strokeWidth || 2,
-                             color,
-                             opacity,
-                             lineCap: LineCapStyle.Round
+                             thickness: anno.strokeWidth || 2, color, opacity, lineCap: LineCapStyle.Round
                          });
                      }
                  }
-            }
+             }
 
-            const pdfBytes = await pdf.save();
-            setResultBlob(uint8ArrayToBlob(pdfBytes));
-            setStatus("success");
-            addToHistory("Edited PDF", file.name, "Custom edits applied");
-        } catch (e) {
-            console.error(e);
-            setErrorMessage("Failed to save PDF");
-            setStatus("error");
-        }
+             const pdfBytes = await pdf.save();
+             setResultBlob(uint8ArrayToBlob(pdfBytes));
+             setStatus("success");
+             addToHistory("Edited PDF", file.name, "Custom edits applied");
+         } catch(e) { 
+             console.error(e); 
+             setErrorMessage("Failed to save."); 
+             setStatus("error");
+         }
     };
 
     const handleDownload = () => {
@@ -463,215 +520,182 @@ export default function EditPDFPage() {
         link.click();
     };
 
-    // Get selected annotation object
+
     const selectedAnno = annotations.find(a => a.id === selectedAnnotationId);
 
     return (
-        <div className="flex flex-col h-screen pt-20 overflow-hidden bg-gray-50">
+        <div className="flex flex-col h-screen pt-20 overflow-hidden bg-gray-50 relative">
              <AnimatedBackground />
+             <FloatingDecorations />
              <input type="file" ref={imageInputRef} accept="image/*" className="hidden" onChange={handleImageUpload} />
-            
+             <SignatureModal 
+                isOpen={isSignatureModalOpen} 
+                onClose={() => { setIsSignatureModalOpen(false); setSelectedTool("select"); }} 
+                onSave={handleSignatureSave}
+            />
+
              {status === "idle" && (
-                <div className="flex-1 flex flex-col items-center justify-center p-4 z-10">
-                    <ToolHeader
-                        title="Edit PDF"
-                        description="Add text, images, shapes and signatures to your PDF document."
-                        icon={MousePointer2}
-                    />
-                    <ToolCard className="max-w-xl w-full p-12 text-center">
-                        <div 
-                            className={`border-3 border-dashed rounded-3xl p-10 transition-colors cursor-pointer ${dragActive ? "border-black bg-blue-50" : "border-gray-200 hover:border-black/30"}`}
-                            onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-                            onDragLeave={() => setDragActive(false)}
-                            onDrop={handleDrop}
-                            onClick={() => document.getElementById("pdf-upload")?.click()}
-                        >
-                            <Upload className="w-16 h-16 text-gray-300 mx-auto mb-6" />
-                            <p className="text-xl font-bold mb-2">Drop PDF here</p>
-                            <p className="text-gray-400">or click to browse</p>
-                            <input id="pdf-upload" type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
-                        </div>
-                    </ToolCard>
+                <div className="flex-1 flex flex-col items-center justify-center p-4 z-10 relative">
+                     <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="w-full max-w-xl">
+                        <ToolHeader
+                            title="Edit PDF"
+                            description="The professional way to edit documents. Add text, shapes, and signatures with ease."
+                            icon={MousePointer2}
+                        />
+                        <ToolCard className="p-12 text-center">
+                            <div 
+                                className={`border-3 border-dashed rounded-3xl p-10 transition-colors cursor-pointer ${dragActive ? "border-black bg-blue-50" : "border-gray-200 hover:border-black/30"}`}
+                                onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                                onDragLeave={() => setDragActive(false)}
+                                onDrop={(e) => { e.preventDefault(); setDragActive(false); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }}
+                                onClick={() => document.getElementById("pdf-upload")?.click()}
+                            >
+                                <Upload className="w-16 h-16 text-gray-300 mx-auto mb-6" />
+                                <p className="text-xl font-bold mb-2">Drop PDF here</p>
+                                <p className="text-gray-400">or click to browse</p>
+                                <input id="pdf-upload" type="file" accept=".pdf" className="hidden" onChange={(e) => { if(e.target.files?.[0]) processFile(e.target.files[0]); }} />
+                            </div>
+                        </ToolCard>
+                    </motion.div>
                 </div>
              )}
 
              {status === "editing" && (
-                 <>
-                    <Toolbar 
-                        selectedTool={selectedTool} 
-                        setSelectedTool={setSelectedTool}
-                        zoom={zoom}
-                        setZoom={setZoom}
-                        activeShape={activeShape}
-                        setActiveShape={setActiveShape}
-                    />
-                    <PropertyBar 
-                        selectedAnnotationId={selectedAnnotationId}
-                        annotationType={selectedAnno?.type}
-                        properties={{
-                            color: selectedAnno?.color || defaults.color,
-                            fontSize: selectedAnno?.fontSize || defaults.fontSize,
-                            fontFamily: selectedAnno?.fontFamily || defaults.fontFamily,
-                            strokeWidth: selectedAnno?.strokeWidth || defaults.strokeWidth,
-                            opacity: selectedAnno?.opacity || defaults.opacity,
-                        }}
-                        onUpdate={updateProperty}
-                        onDelete={() => {
-                            setAnnotations(prev => prev.filter(a => a.id !== selectedAnnotationId));
-                            setSelectedAnnotationId(null);
-                        }}
-                    />
+                 <AnimatePresence>
+                    <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col h-full z-10">
+                        <Toolbar 
+                            selectedTool={selectedTool} 
+                            setSelectedTool={setSelectedTool}
+                            zoom={zoom}
+                            setZoom={setZoom}
+                            activeShape={activeShape}
+                            setActiveShape={setActiveShape}
+                            canUndo={historyIndex > 0}
+                            canRedo={historyIndex < history.length - 1}
+                            onUndo={handleUndo}
+                            onRedo={handleRedo}
+                        />
+                        <PropertyBar 
+                            selectedAnnotationId={selectedAnnotationId}
+                            annotationType={selectedAnno?.type}
+                            properties={{
+                                color: selectedAnno?.color || defaults.color,
+                                fontSize: selectedAnno?.fontSize || defaults.fontSize,
+                                fontFamily: selectedAnno?.fontFamily || defaults.fontFamily,
+                                strokeWidth: selectedAnno?.strokeWidth || defaults.strokeWidth,
+                                opacity: selectedAnno?.opacity || defaults.opacity,
+                            }}
+                            onUpdate={(k, v) => {
+                                setDefaults(prev => ({...prev, [k]: v}));
+                                if(selectedAnnotationId) {
+                                    const newAnnos = annotations.map(a => a.id === selectedAnnotationId ? {...a, [k]:v} : a);
+                                    addToUndo(newAnnos);
+                                }
+                            }}
+                            onDelete={() => {
+                                const newAnnos = annotations.filter(a => a.id !== selectedAnnotationId);
+                                addToUndo(newAnnos);
+                                setSelectedAnnotationId(null);
+                            }}
+                        />
 
-                    <div ref={containerRef} className="flex-1 overflow-auto bg-gray-100/50 relative">
-                        <div className="min-h-full flex flex-col items-center py-10 origin-top">
-                             {/* Page Controls */}
-                             <div className="sticky top-4 z-50 mb-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-gray-200 flex items-center gap-4">
-                                <button disabled={currentPage===0} onClick={() => setCurrentPage(c => c-1)} className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"><ChevronLeft className="w-4 h-4"/></button>
-                                <span className="text-sm font-bold text-gray-700 min-w-[80px] text-center">Page {currentPage+1} / {totalPages}</span>
-                                <button disabled={currentPage===totalPages-1} onClick={() => setCurrentPage(c => c+1)} className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"><ChevronRight className="w-4 h-4"/></button>
-                                <div className="w-px h-4 bg-gray-300 mx-2" />
-                                <button onClick={handleSave} className="bg-black text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-gray-800 transition-colors">Save PDF</button>
-                             </div>
+                        <div ref={containerRef} className="flex-1 overflow-auto bg-gray-100/50 relative">
+                            <div className="min-h-full flex flex-col items-center py-10 origin-top">
+                                <div className="sticky top-4 z-50 mb-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-gray-200 flex items-center gap-4">
+                                    <button disabled={currentPage===0} onClick={() => setCurrentPage(c => c-1)} className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"><ChevronLeft className="w-4 h-4"/></button>
+                                    <span className="text-sm font-bold text-gray-700 min-w-[80px] text-center">Page {currentPage+1} / {totalPages}</span>
+                                    <button disabled={currentPage===totalPages-1} onClick={() => setCurrentPage(c => c+1)} className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"><ChevronRight className="w-4 h-4"/></button>
+                                    <div className="w-px h-4 bg-gray-300 mx-2" />
+                                    <button onClick={handleSave} className="bg-black text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-gray-800 transition-colors">Save PDF</button>
+                                </div>
 
-                             {/* Workspace */}
-                             <div 
-                                ref={workspaceRef}
-                                className={`relative bg-white shadow-2xl transition-transform duration-75 ${selectedTool === "hand" ? "cursor-grab active:cursor-grabbing" : selectedTool === "text" ? "cursor-text" : "cursor-crosshair"}`}
-                                style={{
-                                    width: (pageDimensions[currentPage]?.width || 0) * zoom,
-                                    height: (pageDimensions[currentPage]?.height || 0) * zoom,
-                                }}
-                                onMouseDown={handleMouseDown}
-                                onMouseMove={handleMouseMove}
-                                onMouseUp={handleMouseUp}
-                             >
-                                 {pageImages[currentPage] && (
-                                     <Image 
-                                        src={pageImages[currentPage]} 
-                                        alt="Page" 
-                                        fill 
-                                        className="object-contain pointer-events-none select-none"
-                                        unoptimized
-                                    />
-                                 )}
+                                <div 
+                                    ref={workspaceRef}
+                                    className={`relative bg-white shadow-xl transition-transform duration-75 ${selectedTool === "hand" ? "cursor-grab active:cursor-grabbing" : selectedTool === "text" ? "cursor-text" : selectedTool === "eraser" ? "cursor-not-allowed" : "cursor-crosshair"}`}
+                                    style={{
+                                        width: (pageDimensions[currentPage]?.width || 0) * zoom,
+                                        height: (pageDimensions[currentPage]?.height || 0) * zoom,
+                                    }}
+                                    onMouseDown={handleMouseDown}
+                                    onMouseMove={handleMouseMove}
+                                    onMouseUp={handleMouseUp}
+                                >
+                                     {pageImages[currentPage] && (
+                                         <Image src={pageImages[currentPage]} alt="Page" fill className="object-contain pointer-events-none select-none" unoptimized />
+                                     )}
 
-                                 <svg className="absolute inset-0 pointer-events-none w-full h-full">
-                                    {/* Render Lines / Arrows / Scribbles */}
-                                    {annotations.filter(a => a.page === currentPage && (a.type === "draw" || a.shapeType === "line" || a.shapeType === "arrow")).map(a => {
-                                         if (a.type === "draw" && a.path) {
-                                             return (
-                                                 <polyline 
-                                                    key={a.id}
-                                                    points={a.path.map(p => `${p.x}% ${p.y}%`).join(",")}
-                                                    fill="none"
-                                                    stroke={a.color}
-                                                    strokeWidth={a.strokeWidth}
-                                                    strokeOpacity={a.opacity}
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                 />
-                                             )
-                                         }
-                                         if (a.shapeType === "line" || a.shapeType === "arrow") {
-                                             return (
-                                                 <g key={a.id}>
-                                                     <line 
-                                                        x1={`${a.x}%`} y1={`${a.y}%`}
-                                                        x2={`${a.endX}%`} y2={`${a.endY}%`}
-                                                        stroke={a.color}
-                                                        strokeWidth={a.strokeWidth}
-                                                        strokeOpacity={a.opacity}
-                                                     />
-                                                     {a.shapeType === "arrow" && (
-                                                         <circle cx={`${a.endX}%`} cy={`${a.endY}%`} r={a.strokeWidth! * 1.5} fill={a.color} /> 
-                                                         // Simple dot for arrow head visual for now
-                                                     )}
-                                                 </g>
-                                             )
-                                         }
-                                         return null;
-                                    })}
-                                 </svg>
+                                     <svg className="absolute inset-0 pointer-events-none w-full h-full z-0">
+                                        {annotations.filter(a => a.page === currentPage && (a.type === "draw" || a.shapeType === "line" || a.shapeType === "arrow")).map(a => {
+                                             if (a.type === "draw" && a.path) {
+                                                 return <polyline key={a.id} points={a.path.map(p => `${p.x}% ${p.y}%`).join(",")} fill="none" stroke={a.color} strokeWidth={a.strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+                                             }
+                                             if (a.shapeType === "line" || a.shapeType === "arrow") {
+                                                 return <line key={a.id} x1={`${a.x}%`} y1={`${a.y}%`} x2={`${a.endX}%`} y2={`${a.endY}%`} stroke={a.color} strokeWidth={a.strokeWidth} />
+                                             }
+                                             return null;
+                                        })}
+                                     </svg>
 
-                                 {/* Render HTML Elements (Text, Rect, Circle, Image) */}
-                                 {annotations.filter(a => a.page === currentPage && a.type !== "draw" && a.shapeType !== "line" && a.shapeType !== "arrow").map(a => {
-                                     const isSelected = selectedAnnotationId === a.id;
-                                     return (
-                                         <div
-                                            key={a.id}
-                                            onMouseDown={(e) => {
-                                                e.stopPropagation();
-                                                if (selectedTool === "select") {
-                                                    setSelectedAnnotationId(a.id);
-                                                    setIsDragging(true);
-                                                    if (workspaceRef.current) {
-                                                        const rect = workspaceRef.current.getBoundingClientRect();
-                                                        const clientX = e.clientX; 
-                                                        const clientY = e.clientY;
-                                                        const rx = ((clientX - rect.left) / rect.width) * 100;
-                                                        const ry = ((clientY - rect.top) / rect.height) * 100;
-                                                        dragOffset.current = { x: rx - a.x, y: ry - a.y };
-                                                    }
-                                                }
-                                            }}
-                                            className={`absolute ${isSelected ? "border-2 border-blue-500 z-50" : "z-10 hover:border hover:border-blue-300"}`}
-                                            style={{
-                                                left: `${a.x}%`, top: `${a.y}%`,
-                                                width: a.width ? `${a.width}%` : "auto",
-                                                height: a.height ? `${a.height}%` : "auto",
-                                                borderColor: a.shapeType === "rectangle" || a.shapeType === "circle" ? (isSelected ? "blue" : "transparent") : undefined,
-                                            }}
-                                         >
-                                             {a.type === "text" && (
-                                                 <div style={{ 
-                                                     fontSize: `${(a.fontSize||16) * zoom}px`, 
-                                                     fontFamily: a.fontFamily, 
-                                                     color: a.color,
-                                                     opacity: a.opacity
-                                                 }}>
-                                                     {editingAnnotationId === a.id ? (
-                                                         <input 
-                                                            autoFocus
-                                                            value={a.content}
-                                                            onChange={(e) => updateProperty("content", e.target.value)}
-                                                            onBlur={() => setEditingAnnotationId(null)}
-                                                            className="bg-transparent border-none outline-none text-center"
-                                                            style={{ width: `${(a.content?.length||1)*1}ch`, color: a.color }}
-                                                         />
-                                                     ) : (
-                                                         <span onDoubleClick={() => setEditingAnnotationId(a.id)}>{a.content}</span>
-                                                     )}
-                                                 </div>
-                                             )}
+                                     {annotations.filter(a => a.page === currentPage && a.type !== "draw" && a.shapeType !== "line" && a.shapeType !== "arrow").map(a => {
+                                         const isSelected = selectedAnnotationId === a.id;
+                                         return (
+                                             <div
+                                                key={a.id}
+                                                onMouseDown={(e) => handleAnnotationMouseDown(e, a.id)}
+                                                className={`absolute ${isSelected ? "border-2 border-blue-500 z-50" : "z-10 hover:border hover:border-blue-300"}`}
+                                                style={{
+                                                    left: `${a.x}%`, top: `${a.y}%`,
+                                                    width: a.width ? `${a.width}%` : "auto",
+                                                    height: a.height ? `${a.height}%` : "auto",
+                                                    borderColor: a.shapeType === "rectangle" || a.shapeType === "circle" ? (isSelected ? "blue" : "transparent") : undefined,
+                                                }}
+                                             >
+                                                 {isSelected && (a.type === "image" || a.type === "shape" || a.type === "sign") && (
+                                                     <ResizeHandle isSelected={true} onResizeStart={() => activeOperation.current = "resize"} />
+                                                 )}
 
-                                             {a.shapeType === "rectangle" && (
-                                                 <div className="w-full h-full border-2" style={{ borderColor: a.color, borderWidth: a.strokeWidth, opacity: a.opacity }} />
-                                             )}
-
-                                             {a.shapeType === "circle" && (
-                                                 <div className="w-full h-full border-2 rounded-full" style={{ borderColor: a.color, borderWidth: a.strokeWidth, opacity: a.opacity }} />
-                                             )}
-                                             
-                                             {a.type === "image" && (
-                                                 <div className="w-full h-full relative">
-                                                     <Image src={a.content!} alt="img" fill className="object-contain" unoptimized />
-                                                 </div>
-                                             )}
-                                         </div>
-                                     )
-                                 })}
-                             </div>
+                                                 {a.type === "text" && (
+                                                     <div style={{ fontSize: `${(a.fontSize||16) * zoom}px`, fontFamily: a.fontFamily, color: a.color, opacity: a.opacity }}>
+                                                         {editingAnnotationId === a.id ? (
+                                                             <input 
+                                                                autoFocus value={a.content}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    setAnnotations(prev => prev.map(ann => ann.id===a.id ? {...ann, content: val} : ann));
+                                                                }}
+                                                                onBlur={() => { setEditingAnnotationId(null); addToUndo(annotations); }}
+                                                                className="bg-transparent border-none outline-none text-center"
+                                                                style={{ width: `${(a.content?.length||1)*1}ch`, color: a.color }}
+                                                             />
+                                                         ) : (
+                                                             <span onDoubleClick={() => setEditingAnnotationId(a.id)}>{a.content}</span>
+                                                         )}
+                                                     </div>
+                                                 )}
+                                                 
+                                                 {a.shapeType === "rectangle" && <div className="w-full h-full border-2" style={{ borderColor: a.color, borderWidth: a.strokeWidth }} />}
+                                                 {a.shapeType === "circle" && <div className="w-full h-full border-2 rounded-full" style={{ borderColor: a.color, borderWidth: a.strokeWidth }} />}
+                                                 
+                                                 {(a.type === "image" || a.type === "sign") && (
+                                                     <div className="w-full h-full relative">
+                                                         <Image src={a.content!} alt="content" fill className="object-contain" unoptimized />
+                                                     </div>
+                                                 )}
+                                             </div>
+                                         )
+                                     })}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                 </>
+                    </motion.div>
+                 </AnimatePresence>
              )}
 
              {status === "success" && (
-                 <div className="flex-1 flex items-center justify-center flex-col z-20">
+                 <div className="flex-1 flex items-center justify-center flex-col z-20 relative">
                      <CheckCircle2 className="w-20 h-20 text-green-500 mb-6" />
                      <h2 className="text-3xl font-bold mb-2">Edits Applied!</h2>
-                     <p className="text-gray-500 mb-8">Your document has been updated successfully.</p>
-                     <div className="flex gap-4">
+                     <div className="flex gap-4 mt-8">
                          <button onClick={() => window.location.reload()} className="px-6 py-3 rounded-full font-bold border border-gray-200 hover:bg-gray-50">Edit Another</button>
                          <button onClick={handleDownload} className="px-6 py-3 rounded-full font-bold bg-black text-white hover:bg-gray-800 flex items-center gap-2">
                              <Download className="w-4 h-4" /> Download PDF
