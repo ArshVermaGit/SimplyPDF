@@ -17,6 +17,14 @@ const tools = [
     { title: "PDF to JPG", href: "/pdf-to-jpg" },
     { title: "Unlock PDF", href: "/unlock-pdf" },
     { title: "Protect PDF", href: "/protect-pdf" },
+    { title: "Organize PDF", href: "/organize-pdf" },
+    { title: "Watermark", href: "/watermark-pdf" },
+    { title: "Sign PDF", href: "/sign-pdf" },
+    { title: "Edit PDF", href: "/edit-pdf" },
+    { title: "OCR PDF", href: "/ocr-pdf" },
+    { title: "PDF to Word", href: "/pdf-to-word" },
+    { title: "Word to PDF", href: "/word-to-pdf" },
+    { title: "PDF to Excel", href: "/pdf-to-excel" },
 ];
 
 const resources = [
