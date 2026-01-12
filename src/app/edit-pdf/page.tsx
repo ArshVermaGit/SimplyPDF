@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Download, CheckCircle2, ChevronLeft, ChevronRight, MousePointer2 } from "lucide-react";
+import { Upload, Download, CheckCircle2, ChevronLeft, ChevronRight, MousePointer2, RefreshCw, AlertCircle } from "lucide-react";
 import { PDFDocument, rgb, StandardFonts, LineCapStyle } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
 import {
@@ -14,6 +14,7 @@ import {
     ToolCard,
     ProcessingState
 } from "@/components/ToolPageElements";
+import { EducationalContent } from "@/components/EducationalContent"; // Added
 import { useHistory } from "@/context/HistoryContext";
 import Image from "next/image";
 import { Toolbar, Tool, ShapeType } from "./Toolbar";
@@ -48,7 +49,6 @@ export default function EditPDFPage() {
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<"idle" | "editing" | "processing" | "success" | "error">("idle");
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [errorMessage, setErrorMessage] = useState("");
     const [dragActive, setDragActive] = useState(false);
     
@@ -131,6 +131,7 @@ export default function EditPDFPage() {
 
     const processFile = async (pdfFile: File) => {
         setFile(pdfFile);
+        setStatus("processing"); // Show loading instead of bare
         try {
             const pdfjsLib = await import("pdfjs-dist");
             const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -231,16 +232,7 @@ export default function EditPDFPage() {
             return;
         }
 
-        // Eraser logic
-        if (selectedTool === "eraser") {
-            // Check if we hit an annotation? handled by annotation click usually, 
-            // but for 'stroke' eraser we might want to just drag
-            // For now, click eraser is safer.
-            return;
-        }
-
         if (selectedTool === "select") {
-            // Deselect if clicking empty space
             setSelectedAnnotationId(null);
             return;
         }
@@ -289,9 +281,8 @@ export default function EditPDFPage() {
                 opacity: defaults.opacity,
                 rotation: 0
             };
-            setAnnotations(prev => [...prev, annotation]); // Temporary state, finalize on up only?
-            // Actually better to manipulate state directly for fluid UI, push to history on UP
-            interactionStart.current = { x, y, initialAnnotations: [...annotations] }; // Backup for cancel?
+            setAnnotations(prev => [...prev, annotation]); 
+            interactionStart.current = { x, y, initialAnnotations: [...annotations] };
             setSelectedAnnotationId(newId);
         }
     };
@@ -338,13 +329,9 @@ export default function EditPDFPage() {
         }
         
         if (activeOperation.current === "resize" && selectedAnnotationId) {
-            // Simplified resizing logic based on handle
             setAnnotations(prev => prev.map(a => {
                 if (a.id === selectedAnnotationId) {
                     const { x: ax, y: ay } = a;
-                    // Logic would depend on which handle (nw, ne, sw, se)
-                    // For brevity, basic resize from bottom-right (se) or just width/height
-                    // A full implementation requires tracking handle type
                     const w = Math.max(1, Math.abs(x - ax));
                     const h = Math.max(1, Math.abs(y - ay));
                     return { ...a, width: w, height: h };
@@ -371,7 +358,6 @@ export default function EditPDFPage() {
             }
             setCurrentPath([]);
         } else if (activeOperation.current === "create" || activeOperation.current === "move" || activeOperation.current === "resize") {
-            // Commit change to history
             addToUndo(annotations); 
         }
 
@@ -429,7 +415,7 @@ export default function EditPDFPage() {
     };
 
 
-    // --- PDF Generation --- (Same as before, abbreviated)
+    // --- PDF Generation ---
     const handleSave = async () => {
          if (!file) return;
          setStatus("processing");
@@ -520,11 +506,15 @@ export default function EditPDFPage() {
         link.click();
     };
 
+    const reset = () => {
+        window.location.reload();
+    };
+
 
     const selectedAnno = annotations.find(a => a.id === selectedAnnotationId);
 
     return (
-        <div className="flex flex-col h-screen pt-20 overflow-hidden bg-gray-50 relative">
+        <div className="relative min-h-[calc(100vh-80px)] pt-24 pb-16 overflow-hidden">
              <AnimatedBackground />
              <FloatingDecorations />
              <input type="file" ref={imageInputRef} accept="image/*" className="hidden" onChange={handleImageUpload} />
@@ -534,35 +524,74 @@ export default function EditPDFPage() {
                 onSave={handleSignatureSave}
             />
 
-             {status === "idle" && (
-                <div className="flex-1 flex flex-col items-center justify-center p-4 z-10 relative">
-                     <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="w-full max-w-xl">
+            <div className={`container mx-auto relative z-10 ${status === "editing" ? "h-[calc(100vh-140px)]" : ""}`}>
+             <AnimatePresence mode="wait">
+                 {status === "idle" && (
+                    <motion.div
+                        key="idle"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="max-w-4xl mx-auto"
+                    >
                         <ToolHeader
                             title="Edit PDF"
                             description="The professional way to edit documents. Add text, shapes, and signatures with ease."
                             icon={MousePointer2}
                         />
-                        <ToolCard className="p-12 text-center">
-                            <div 
-                                className={`border-3 border-dashed rounded-3xl p-10 transition-colors cursor-pointer ${dragActive ? "border-black bg-blue-50" : "border-gray-200 hover:border-black/30"}`}
+
+                        <ToolCard className="p-8">
+                            <div
+                                className={`drop-zone active:border-black ${dragActive ? "active" : ""}`}
                                 onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                                 onDragLeave={() => setDragActive(false)}
                                 onDrop={(e) => { e.preventDefault(); setDragActive(false); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }}
                                 onClick={() => document.getElementById("pdf-upload")?.click()}
                             >
-                                <Upload className="w-16 h-16 text-gray-300 mx-auto mb-6" />
-                                <p className="text-xl font-bold mb-2">Drop PDF here</p>
-                                <p className="text-gray-400">or click to browse</p>
                                 <input id="pdf-upload" type="file" accept=".pdf" className="hidden" onChange={(e) => { if(e.target.files?.[0]) processFile(e.target.files[0]); }} />
+                                <Upload className="w-12 h-12 text-gray-400 mb-4" />
+                                <p className="text-lg font-medium mb-2">Drop PDF here</p>
+                                <p className="text-gray-400 text-sm">or click to browse • Free & Private</p>
                             </div>
                         </ToolCard>
-                    </motion.div>
-                </div>
-             )}
 
-             {status === "editing" && (
-                 <AnimatePresence>
-                    <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col h-full z-10">
+                         {/* Educational Content for Landing */}
+                        <div className="mt-20">
+                             <EducationalContent
+                                howItWorks={{
+                                    title: "How to Edit PDF Files",
+                                    steps: [
+                                        "Upload your PDF file by dragging and dropping it.",
+                                        "Use the toolbar to add text, images, shapes, signatures, or drawings.",
+                                        "Click 'Save PDF' to download your perfectly edited document."
+                                    ]
+                                }}
+                                benefits={{
+                                    title: "Why Use Our PDF Editor?",
+                                    items: [
+                                        { title: "Completely Free", desc: "No watermarks, no sign-ups, no hidden costs." },
+                                        { title: "Browser Based", desc: "Files are processed locally in your browser for maximum privacy." },
+                                        { title: "Rich Tools", desc: "Full suite of editing tools including shapes, drawings, and signatures." }
+                                    ]
+                                }}
+                                faqs={[
+                                    { question: "Can I edit existing text?", answer: "To ensure document integrity, this tool allows you to add new content (text, shapes, images) to your PDF. It is not designed to reflow existing proprietary text." },
+                                    { question: "Is it secure?", answer: "Yes! All processing happens in your browser. Your files are never uploaded to our servers." }
+                                ]}
+                            />
+                        </div>
+                    </motion.div>
+                 )}
+
+                 {status === "processing" && (
+                    <ProcessingState
+                        message="Loading PDF..."
+                        description="Preparing your workspace..."
+                    />
+                 )}
+
+                 {status === "editing" && (
+                    <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col h-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
                         <Toolbar 
                             selectedTool={selectedTool} 
                             setSelectedTool={setSelectedTool}
@@ -606,7 +635,7 @@ export default function EditPDFPage() {
                                     <span className="text-sm font-bold text-gray-700 min-w-[80px] text-center">Page {currentPage+1} / {totalPages}</span>
                                     <button disabled={currentPage===totalPages-1} onClick={() => setCurrentPage(c => c+1)} className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"><ChevronRight className="w-4 h-4"/></button>
                                     <div className="w-px h-4 bg-gray-300 mx-2" />
-                                    <button onClick={handleSave} className="bg-black text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-gray-800 transition-colors">Save PDF</button>
+                                    <button onClick={handleSave} className="bg-black text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-gray-800 transition-colors shadow-md">Save PDF</button>
                                 </div>
 
                                 <div 
@@ -688,23 +717,55 @@ export default function EditPDFPage() {
                             </div>
                         </div>
                     </motion.div>
-                 </AnimatePresence>
-             )}
+                 )}
 
-             {status === "success" && (
-                 <div className="flex-1 flex items-center justify-center flex-col z-20 relative">
-                     <CheckCircle2 className="w-20 h-20 text-green-500 mb-6" />
-                     <h2 className="text-3xl font-bold mb-2">Edits Applied!</h2>
-                     <div className="flex gap-4 mt-8">
-                         <button onClick={() => window.location.reload()} className="px-6 py-3 rounded-full font-bold border border-gray-200 hover:bg-gray-50">Edit Another</button>
-                         <button onClick={handleDownload} className="px-6 py-3 rounded-full font-bold bg-black text-white hover:bg-gray-800 flex items-center gap-2">
-                             <Download className="w-4 h-4" /> Download PDF
-                         </button>
-                     </div>
-                 </div>
-             )}
-             
-             {status === "processing" && <ProcessingState title="Saving Changes..." />}
+                 {status === "success" && (
+                    <motion.div
+                        key="success"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
+                    >
+                        <div className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mb-8">
+                            <CheckCircle2 className="w-10 h-10" />
+                        </div>
+                        <h2 className="text-3xl font-bold mb-2">PDF Edited Successfully!</h2>
+                        <p className="text-gray-500 mb-10">Your document is ready for download.</p>
+
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <button onClick={handleDownload} className="btn-primary py-4 px-10 flex items-center gap-2">
+                                <Download className="w-5 h-5" />
+                                Download PDF
+                            </button>
+                            <button onClick={reset} className="btn-outline py-4 px-10 flex items-center gap-2">
+                                <RefreshCw className="w-5 h-5" />
+                                Edit Another
+                            </button>
+                        </div>
+                    </motion.div>
+                 )}
+                 
+                 {status === "error" && (
+                     <motion.div
+                        key="error"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
+                    >
+                        <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-8">
+                            <AlertCircle className="w-10 h-10" />
+                        </div>
+                        <h2 className="text-3xl font-bold mb-2">Something went wrong</h2>
+                        <p className="text-gray-500 mb-10">{errorMessage}</p>
+
+                        <button onClick={reset} className="btn-primary py-4 px-10 flex items-center gap-2">
+                            <RefreshCw className="w-5 h-5" />
+                            Try Again
+                        </button>
+                    </motion.div>
+                 )}
+             </AnimatePresence>
+             </div>
         </div>
     );
 }
