@@ -1,127 +1,121 @@
-# SimplyPDF - The Easiest PDF Tool
+<!-- HEADER -->
+<br />
+<div align="center">
+  <a href="https://github.com/ArshVermaGit/SimplyPDF">
+    <img src="public/icon.png" alt="Logo" width="80" height="80">
+  </a>
 
-![SimplyPDF Banner](public/icon.png)
+  <h3 align="center">SimplyPDF</h3>
 
-> **The ultimate, privacy-focused PDF swiss-army knife built with Next.js 16 and Tailwind CSS.**
+  <p align="center">
+    The Ultimate, Privacy-Focused PDF Swiss-Army Knife
+    <br />
+    <a href="#">View Demo</a>
+    ·
+    <a href="https://github.com/ArshVermaGit/SimplyPDF/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/ArshVermaGit/SimplyPDF/issues">Request Feature</a>
+  </p>
+</div>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Next.js](https://img.shields.io/badge/Next.js-16.1.0-default?style=flat&logo=next.js&logoColor=white)](https://nextjs.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+<!-- BADGES -->
+<div align="center">
 
-## 🚀 Overview
+[![Next.js](https://img.shields.io/badge/Next.js-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 
-**SimplyPDF** is a hyper-premium, client-side PDF manipulation suite designed for speed, privacy, and ease of use. Unlike other tools, SimplyPDF processes files **locally in your browser**, ensuring your documents never leave your device.
+</div>
 
-Featuring a stunning, responsive UI built with Tailwind CSS and Framer Motion, it offers a desktop-class editing experience on the web.
+<br />
 
-## ✨ Key Features
+<!-- ABOUT THE PROJECT -->
 
-SimplyPDF includes **16+ powerful tools** to handle any PDF task:
+## ✨ About The Project
 
-### 📝 Editing & Modification
+**SimplyPDF** is a premium, high-performance web application designed to redefine how you interact with PDFs. Built with a hyper-polished, responsive aesthetic, it offers a seamless, desktop-class experience for editing, converting, and managing documents directly in your browser.
 
-- **Edit PDF**: Full-featured editor to add text, shapes, images, freehand drawings, and signatures.
-- **Sign PDF**: Add digital signatures to your documents securely.
-- **Watermark PDF**: Apply custom text or image watermarks for copyright protection.
-- **Rotate PDF**: Rotate individual pages or entire documents.
-- **Organize PDF**: Rearrange, delete, or sort pages within your PDF.
+Unlike other tools that upload your data to remote servers, SimplyPDF operates **entirely client-side**. Your sensitive documents never leave your device, ensuring maximum privacy and security without compromising on power or features.
 
-### 🔄 Conversion
+### Key Features
 
-- **PDF to Word**: Convert non-selectable PDFs to editable Word documents.
-- **Word to PDF**: Convert DOC/DOCX files to professional PDFs.
-- **PDF to Excel**: Extract tables and data into Excel spreadsheets.
-- **PDF to JPG**: Convert PDF pages into high-quality images.
-- **JPG to PDF**: Create PDFs from images.
+- ⚡ **Client-Side Processing**: Zero server uploads. All magic happens locally in your browser for 100% privacy.
+- 💎 **Premium Design**: A stunning, responsive UI built with **Tailwind CSS 4**, featuring glassmorphism, micro-interactions, and fluid animations.
+- 📝 **Advanced Editor**: Full suite of professional tools—add text, signatures, shapes, and images with ease.
+- 🛠️ **16+ Powerful Tools**: Merge, Split, Compress, Convert (Word/Excel/JPG), Organize, Watermark, and more.
+- 🔒 **Enterprise Grade**: Secure by design with no data retention.
 
-### 🛠️ File Management
+<!-- GETTING STARTED -->
 
-- **Merge PDF**: Combine multiple PDFs into a single file.
-- **Split PDF**: Extract ranges or specific pages into new PDFs.
-- **Compress PDF**: Optimize file size without losing quality.
-- **Unlock PDF**: Remove passwords from protected files.
-- **Protect PDF**: Encrypt your PDF with strong passwords.
-- **OCR PDF**: Recognize text in scanned documents via Tesseract.js.
+## 🚀 Getting Started
 
-## 🛠️ Technology Stack
-
-Built with the latest and greatest web technologies:
-
-- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) + [Framer Motion](https://www.framer.com/motion/) for animations.
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **PDF Engine**: `pdf-lib`, `pdfjs-dist`, `@neslinesli93/qpdf-wasm`
-- **OCR Engine**: `tesseract.js`
-- **File Handling**: `file-saver`, `jszip`
-- **Icons**: `lucide-react`
-- **Auth & Ads**: Google Identity Services + Google AdSense
-
-## ⚡ Getting Started
+To get a local copy up and running, follow these simple steps.
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
-- npm or yarn
+- **Node.js** (v18 or higher)
+- **npm** or yarn
 
 ### Installation
 
-1. **Clone the repository:**
+1.  **Clone the repo**
 
-   ```bash
-   git clone https://github.com/yourusername/SimplyPDF.git
-   cd SimplyPDF
-   ```
+    ```sh
+    git clone https://github.com/ArshVermaGit/SimplyPDF.git
+    ```
 
-2. **Install dependencies:**
+2.  **Install dependencies**
 
-   ```bash
-   npm install
-   ```
+    ```sh
+    npm install
+    ```
 
-3. **Set up environment variables:**
-   Create a `.env.local` file in the root directory:
+3.  **Configure Environment**
+    Create a `.env.local` file based on the following variables:
 
-   ```env
-   NEXT_PUBLIC_BASE_URL=http://localhost:3000
-   NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
-   ```
+    ```sh
+    NEXT_PUBLIC_BASE_URL=http://localhost:3000
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+    ```
 
-4. **Run the development server:**
+4.  **Start the server**
+    ```sh
+    npm run dev
+    ```
 
-   ```bash
-   npm run dev
-   ```
-
-   Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## 📦 Build & Deploy
-
-This project is optimized for deployment on [Vercel](https://vercel.com).
-
-To create a production build locally:
-
-```bash
-npm run build
-npm start
-```
+<!-- CONTRIBUTING -->
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
+
+<!-- AUTHOR -->
+
+## � Author
+
+**Arsh Verma**
+
+- **Portfolio**: [arshcreates.vercel.app](https://arshcreates.vercel.app)
+- **GitHub**: [@ArshVermaGit](https://github.com/ArshVermaGit)
+- **LinkedIn**: [Arsh Verma](https://linkedin.com/in/arsh-verma)
+- **X (Twitter)**: [@TheArshVerma](https://twitter.com/TheArshVerma)
+
+<!-- LICENSE -->
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Distributed under the MIT License. See `LICENSE` for more information.
 
----
-
-<p align="center">
+<br />
+<div align="center">
   Made with ❤️ by Arsh Verma
-</p>
+</div>
