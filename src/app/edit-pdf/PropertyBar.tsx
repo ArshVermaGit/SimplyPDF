@@ -2,7 +2,7 @@ import { Bold, Italic, AlignLeft, AlignCenter, AlignRight, Trash2, Type, Palette
 
 interface PropertyBarProps {
     selectedAnnotationId: string | null;
-    annotationType?: "text" | "draw" | "shape" | "image" | "line" | "arrow";
+    annotationType?: "text" | "draw" | "shape" | "image" | "line" | "arrow" | "sign";
     properties: {
         color: string;
         fontSize?: number;
