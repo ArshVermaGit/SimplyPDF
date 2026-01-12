@@ -23,56 +23,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
         'ocr-pdf',
     ]
 
-    const toolPages = tools.map((tool) => ({
-        url: `${baseUrl}/${tool}`,
-        lastModified: new Date(),
-        changeFrequency: 'weekly' as const,
-        priority: 0.8,
-    }))
-
-    return [
-        {
-            url: baseUrl,
-            lastModified: new Date(),
-            changeFrequency: 'daily' as const,
-            priority: 1,
-        },
-        {
-            url: `${baseUrl}/about`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly' as const,
-            priority: 0.5,
-        },
-        {
-            url: `${baseUrl}/privacy`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly' as const,
-            priority: 0.4,
-        },
-        {
-            url: `${baseUrl}/terms`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly' as const,
-            priority: 0.4,
-        },
-        {
-            url: `${baseUrl}/contact`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly' as const,
-            priority: 0.5,
-        },
-        {
-            url: `${baseUrl}/faq`,
-            lastModified: new Date(),
-            changeFrequency: 'weekly' as const,
-            priority: 0.6,
-        },
-        {
-            url: `${baseUrl}/history`,
-            lastModified: new Date(),
-            changeFrequency: 'weekly' as const,
-            priority: 0.3,
-        },
-        ...toolPages,
+    const pages = [
+        '',
+        'about',
+        'contact',
+        'faq',
+        'privacy',
+        'terms',
+        'history',
     ]
+
+    const routes = [
+        ...pages.map(page => ({
+            url: `${baseUrl}${page ? `/${page}` : ''}`,
+            lastModified: new Date(),
+            changeFrequency: (page === '' ? 'daily' : 'monthly') as 'daily' | 'monthly' | 'weekly' | 'yearly' | 'always' | 'hourly',
+            priority: page === '' ? 1 : 0.5,
+        })),
+        ...tools.map((tool) => ({
+            url: `${baseUrl}/${tool}`,
+            lastModified: new Date(),
+            changeFrequency: 'weekly' as const,
+            priority: 0.8,
+        }))
+    ]
+
+    return routes
 }
