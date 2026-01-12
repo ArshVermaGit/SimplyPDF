@@ -24,6 +24,8 @@ export default function PDFToExcelPage() {
     const [dragActive, setDragActive] = useState(false);
     const [progress, setProgress] = useState(0);
     const [extractedData, setExtractedData] = useState<string[][]>([]);
+    const [isScanning, setIsScanning] = useState(false);
+    const [exportFormat, setExportFormat] = useState<"xlsx" | "csv" | "json">("xlsx");
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
@@ -44,11 +46,11 @@ export default function PDFToExcelPage() {
     const handleConvert = async () => {
         if (!file) return;
         setStatus("processing");
+        setIsScanning(true);
         setErrorMessage("");
         setProgress(0);
 
         try {
-            console.log("Loading pdfjs-dist...");
             const pdfjsLib = await import("pdfjs-dist");
             const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
             pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
@@ -64,96 +66,141 @@ export default function PDFToExcelPage() {
 
             const pdfDoc = await loadingTask.promise;
             const numPages = pdfDoc.numPages;
-
             const allRows: string[][] = [];
+
+            // Heuristic for row clustering
+            const ROW_THRESHOLD = 5; // Pixels
 
             for (let i = 1; i <= numPages; i++) {
                 setProgress(Math.round((i / numPages) * 100));
 
                 const page = await pdfDoc.getPage(i);
                 const textContent = await page.getTextContent();
+                const items = textContent.items as unknown as { transform: number[]; str: string; width: number; height: number }[];
 
-                // Extract text items with positions
-                const items = textContent.items as unknown as { transform: number[]; str: string }[];
+                if (items.length === 0) continue;
 
-                // Group by Y position to form rows
-                const rows: { [y: number]: { x: number; text: string }[] } = {};
+                // 1. Group items by Y coordinate with clustering
+                const sortedItems = [...items].sort((a, b) => b.transform[5] - a.transform[5]);
+                const clusteredRows: { y: number; items: typeof items }[] = [];
 
-                items.forEach(item => {
-                    const y = Math.round(item.transform[5] / 10) * 10; // Round to nearest 10
-                    const x = item.transform[4];
-                    if (!rows[y]) rows[y] = [];
-                    rows[y].push({ x, text: item.str.trim() });
+                sortedItems.forEach(item => {
+                    const y = item.transform[5];
+                    const foundRow = clusteredRows.find(r => Math.abs(r.y - y) < ROW_THRESHOLD);
+                    
+                    if (foundRow) {
+                        foundRow.items.push(item);
+                        // Update average Y for the cluster
+                        foundRow.y = (foundRow.y + y) / 2;
+                    } else {
+                        clusteredRows.push({ y, items: [item] });
+                    }
                 });
 
-                // Sort rows by Y (top to bottom) and items by X (left to right)
-                const sortedYs = Object.keys(rows).map(Number).sort((a, b) => b - a);
-
-                for (const y of sortedYs) {
-                    const rowItems = rows[y].sort((a, b) => a.x - b.x);
-                    const rowTexts = rowItems.map(item => item.text).filter(t => t);
-
-                    if (rowTexts.length > 0) {
-                        // Try to detect columns based on spacing
-                        const cells: string[] = [];
-                        let currentCell = "";
-                        let lastX = 0;
-
-                        for (const item of rowItems) {
-                            if (currentCell && item.x - lastX > 50) {
-                                cells.push(currentCell.trim());
-                                currentCell = item.text;
-                            } else {
-                                currentCell += (currentCell ? " " : "") + item.text;
-                            }
-                            lastX = item.x;
-                        }
-
-                        if (currentCell.trim()) {
-                            cells.push(currentCell.trim());
-                        }
-
-                        if (cells.length > 0) {
-                            allRows.push(cells);
-                        }
+                // 2. Statistics for dynamic column gap detection
+                const xGaps: number[] = [];
+                clusteredRows.forEach(row => {
+                    const rowItems = row.items.sort((a, b) => a.transform[4] - b.transform[4]);
+                    for (let j = 0; j < rowItems.length - 1; j++) {
+                        const gap = rowItems[j+1].transform[4] - (rowItems[j].transform[4] + rowItems[j].width);
+                        if (gap > 2) xGaps.push(gap);
                     }
-                }
+                });
+
+                // Determine gap threshold based on median of positive gaps, or fallback to fixed
+                const sortedGaps = xGaps.sort((a, b) => a - b);
+                const medianGap = sortedGaps.length > 0 ? sortedGaps[Math.floor(sortedGaps.length / 2)] : 5;
+                const dynamicThreshold = Math.max(medianGap * 3, 20); // Heuristic multiplier
+
+                // 3. Process each row into cells
+                clusteredRows.forEach(row => {
+                    const rowItems = row.items.sort((a, b) => a.transform[4] - b.transform[4]);
+                    const cells: string[] = [];
+                    let currentCell = "";
+                    let lastXRight = -1;
+
+                    rowItems.forEach(item => {
+                        const x = item.transform[4];
+                        const text = item.str.trim();
+                        if (!text) return;
+
+                        if (lastXRight !== -1 && (x - lastXRight) > dynamicThreshold) {
+                            cells.push(currentCell.trim());
+                            currentCell = text;
+                        } else {
+                            currentCell += (currentCell ? (x - lastXRight < 2 ? "" : " ") : "") + text;
+                        }
+                        lastXRight = x + item.width;
+                    });
+
+                    if (currentCell.trim()) {
+                        cells.push(currentCell.trim());
+                    }
+
+                    if (cells.length > 0) {
+                        allRows.push(cells);
+                    }
+                });
+
                 (page as { cleanup?: () => void }).cleanup?.();
             }
 
-            setExtractedData(allRows.slice(0, 20)); // Preview first 20 rows
+            if (allRows.length === 0) {
+                throw new Error("No text or tables found in this PDF. It might be a scanned image.");
+            }
 
-            // Create Excel workbook
+            setExtractedData(allRows.slice(0, 50)); // More preview rows
+
+            // Create Workbook
             const ws = XLSX.utils.aoa_to_sheet(allRows);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            XLSX.utils.book_append_sheet(wb, ws, "extracted_data");
 
-            // Generate Excel file
-            const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-            const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            // Store different formats in blobs
+            const xlsxBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+            const csvContent = XLSX.utils.sheet_to_csv(ws);
+            const jsonContent = JSON.stringify(allRows, null, 2);
 
-            setResultBlob(blob);
+            const blobs = {
+                xlsx: new Blob([xlsxBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+                csv: new Blob([csvContent], { type: "text/csv" }),
+                json: new Blob([jsonContent], { type: "application/json" })
+            };
+
+            setResultBlob(blobs.xlsx); // Default to xlsx for initial state
+            (window as Window & { _blobs?: Record<string, Blob> })._blobs = blobs; // Temporary storage for format switching
+
             setStatus("success");
+            setIsScanning(false);
 
             if (file) {
-                addToHistory("PDF to Excel", file.name, "Converted to Excel");
+                addToHistory("PDF to Excel", file.name, `Converted ${allRows.length} rows`);
             }
 
             await pdfDoc.destroy();
         } catch (error) {
             console.error(error);
-            const message = error instanceof Error ? error.message : "Unknown error";
-            setErrorMessage(message);
+            setErrorMessage(error instanceof Error ? error.message : "Conversion failed");
             setStatus("error");
+            setIsScanning(false);
+        }
+    };
+
+    const handleFormatChange = (format: "xlsx" | "csv" | "json") => {
+        setExportFormat(format);
+        const blobs = (window as Window & { _blobs?: Record<string, Blob> })._blobs;
+        if (blobs && blobs[format]) {
+            setResultBlob(blobs[format]);
         }
     };
 
     const handleDownload = () => {
         if (!resultBlob) return;
+        const extension = exportFormat === "xlsx" ? "xlsx" : exportFormat === "csv" ? "csv" : "json";
         const url = URL.createObjectURL(resultBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = file?.name.replace(/\.pdf$/i, ".xlsx") || "spreadsheet.xlsx";
+        link.download = file?.name.replace(/\.pdf$/i, "." + extension) || "data." + extension;
         link.click();
         URL.revokeObjectURL(url);
     };
@@ -251,11 +298,21 @@ export default function PDFToExcelPage() {
                     )}
 
                     {status === "processing" && (
-                        <ProcessingState
-                            title="Converting to Excel..."
-                            description="Extracting table data..."
-                            progress={progress}
-                        />
+                        <div className="relative">
+                            <ProcessingState
+                                title="Converting to Excel..."
+                                description="Analyzing document structure and extracting tables..."
+                                progress={progress}
+                            />
+                            {isScanning && (
+                                <motion.div 
+                                    initial={{ top: "0%" }}
+                                    animate={{ top: "100%" }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                    className="absolute left-0 right-0 h-1 bg-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.5)] z-20"
+                                />
+                            )}
+                        </div>
                     )}
 
                     {status === "success" && (
@@ -274,18 +331,51 @@ export default function PDFToExcelPage() {
                             </div>
 
                             {extractedData.length > 0 && (
-                                <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-xl mb-8">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Table className="w-5 h-5 text-gray-500" />
-                                        <h3 className="font-semibold">Data Preview</h3>
+                                <div className="bg-white rounded-4xl border border-gray-100 p-8 shadow-2xl mb-8 overflow-hidden relative">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
+                                                <Table className="w-5 h-5 text-green-600" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-lg">Smart Data Preview</h3>
+                                                <p className="text-sm text-gray-400">Heuristic table detection active</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100">
+                                            {(["xlsx", "csv", "json"] as const).map((fmt) => (
+                                                <button
+                                                    key={fmt}
+                                                    onClick={() => handleFormatChange(fmt)}
+                                                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                                                        exportFormat === fmt 
+                                                        ? "bg-white text-black shadow-sm border border-gray-100" 
+                                                        : "text-gray-400 hover:text-gray-600"
+                                                    }`}
+                                                >
+                                                    {fmt.toUpperCase()}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-full text-sm">
+
+                                    <div className="overflow-x-auto rounded-xl border border-gray-100 max-h-[400px]">
+                                        <table className="min-w-full text-sm border-collapse">
+                                            <thead className="sticky top-0 bg-gray-50 z-10">
+                                                <tr>
+                                                    {extractedData[0]?.map((_, i) => (
+                                                        <th key={i} className="px-4 py-3 text-left font-bold text-gray-400 border-b border-gray-100 uppercase text-[10px] tracking-wider">
+                                                            Col {i + 1}
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
                                             <tbody>
                                                 {extractedData.map((row, i) => (
-                                                    <tr key={i} className={i % 2 === 0 ? "bg-gray-50" : ""}>
+                                                    <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                                                         {row.map((cell, j) => (
-                                                            <td key={j} className="px-3 py-2 border border-gray-200 max-w-48 truncate">
+                                                            <td key={j} className={`px-4 py-3 border-b border-gray-50 max-w-48 truncate ${i === 0 ? "font-bold text-black" : "text-gray-600 font-medium"}`}>
                                                                 {cell}
                                                             </td>
                                                         ))}
@@ -294,20 +384,21 @@ export default function PDFToExcelPage() {
                                             </tbody>
                                         </table>
                                     </div>
-                                    {extractedData.length >= 20 && (
-                                        <p className="text-sm text-gray-400 mt-3 text-center">Showing first 20 rows...</p>
-                                    )}
+                                    <div className="mt-4 flex items-center justify-between text-xs text-gray-400 font-medium">
+                                        <span>Previewing up to 50 rows</span>
+                                        <span>Total rows extracted: {extractedData.length}</span>
+                                    </div>
                                 </div>
                             )}
 
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <button onClick={handleDownload} className="btn-primary py-4 px-10 flex items-center gap-2 justify-center">
-                                    <Download className="w-5 h-5" />
-                                    Download Excel
+                                <button onClick={handleDownload} className="btn-primary py-5 px-12 flex items-center gap-3 text-xl shadow-xl shadow-black/10 transition-transform hover:scale-105 active:scale-95 group">
+                                    <Download className="w-6 h-6 group-hover:animate-bounce" />
+                                    Download .{exportFormat.toUpperCase()}
                                 </button>
-                                <button onClick={reset} className="btn-outline py-4 px-10 flex items-center gap-2 justify-center">
-                                    <RefreshCw className="w-5 h-5" />
-                                    Convert Another
+                                <button onClick={reset} className="btn-outline py-5 px-12 flex items-center gap-3 text-xl transition-transform hover:scale-105 active:scale-95">
+                                    <RefreshCw className="w-6 h-6" />
+                                    Start Over
                                 </button>
                             </div>
                         </motion.div>
