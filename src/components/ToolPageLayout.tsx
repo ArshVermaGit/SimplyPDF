@@ -233,7 +233,7 @@ export function ToolPageLayout({
                                 ].map((feature) => (
                                     <motion.div
                                         key={feature.label}
-                                        className="group relative p-6 rounded-2xl bg-gradient-to-b from-gray-50 to-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-500"
+                                        className="group relative p-6 rounded-2xl bg-linear-to-b from-gray-50 to-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-500"
                                         whileHover={{ y: -5 }}
                                     >
                                         <span className="text-2xl mb-3 block">{feature.icon}</span>
@@ -329,7 +329,7 @@ export function ToolPageLayout({
                             className="flex flex-col items-center justify-center py-24 max-w-lg mx-auto text-center"
                         >
                             <motion.div
-                                className="w-24 h-24 bg-gradient-to-br from-red-100 to-red-50 text-red-600 rounded-full flex items-center justify-center mb-8 shadow-lg shadow-red-100"
+                                className="w-24 h-24 bg-linear-to-br from-red-100 to-red-50 text-red-600 rounded-full flex items-center justify-center mb-8 shadow-lg shadow-red-100"
                                 initial={{ scale: 0, rotate: -180 }}
                                 animate={{ scale: 1, rotate: 0 }}
                                 transition={{ type: "spring", stiffness: 200 }}
