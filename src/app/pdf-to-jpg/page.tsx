@@ -210,7 +210,7 @@ export default function PDFToJPGPage() {
                                             className="relative overflow-hidden rounded-2xl border-2 border-gray-100 hover:border-black shadow-sm hover:shadow-xl transition-all duration-300"
                                             onClick={() => { setPreviewPage(index); setPreviewOpen(true); }}
                                         >
-                                            <div className="aspect-[3/4] bg-white p-2 relative">
+                                            <div className="aspect-3/4 bg-white p-2 relative">
                                                 <Image
                                                     src={image.dataUrl}
                                                     alt={`Page ${index + 1}`}
