@@ -2,7 +2,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/ArshVermaGit/SimplyPDF">
-    <img src="public/icon.png" alt="Logo" width="80" height="80">
+    <img src="public/logo.png" alt="Logo" width="80" height="80">
   </a>
 
   <h3 align="center">SimplyPDF</h3>
