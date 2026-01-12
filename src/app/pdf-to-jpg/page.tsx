@@ -287,6 +287,42 @@ export default function PDFToJPGPage() {
                 onPageChange={setPreviewPage}
                 title={file?.name || "Image Preview"}
             />
+
+            <EducationalContent
+                howItWorks={{
+                    title: "How to Convert PDF to JPG",
+                    steps: [
+                        "Upload your PDF file. We accept single or multi-page documents.",
+                        "Our engine renders each page into a high-quality JPG image.",
+                        "Download individual images or get them all in a single ZIP file."
+                    ]
+                }}
+                benefits={{
+                    title: "Crystal Clear Images",
+                    items: [
+                        { title: "High Resolution", desc: "We render pages at 2x scale to ensure text remains crisp and readable." },
+                        { title: "Batch Processing", desc: "Convert a 100-page PDF into 100 separate images in seconds." },
+                        { title: "Secure & Private", desc: "Files are processed locally in your browser and never uploaded to our servers." },
+                        { title: "ZIP Download", desc: "Save time by downloading all converted images at once in an organized archive." }
+                    ]
+                }}
+                faqs={[
+                    {
+                        question: "What is the image quality?",
+                        answer: "We convert at high DPI (approx 150-300 depending on screen) to ensure professional quality suitable for presentations and printing."
+                    },
+                    {
+                        question: "Can I convert large PDFs?",
+                        answer: "Yes, SimplyPDF can handle large files. Since processing is local, performance depends on your device speed, but most files convert instantly."
+                    },
+                    {
+                        question: "Is it really free?",
+                        answer: "Yes, 100% free with no limits on the number of pages or files you can convert."
+                    }
+                ]}
+            />
         </div>
     );
 }
+
+import { EducationalContent } from "@/components/EducationalContent";
