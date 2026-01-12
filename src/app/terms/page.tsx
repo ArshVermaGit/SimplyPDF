@@ -185,7 +185,7 @@ export default function TermsPage() {
                             className="bg-white rounded-2xl border border-gray-100 p-8 hover:border-gray-200 hover:shadow-lg transition-all duration-300"
                         >
                             <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
                                     <section.icon className="w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
