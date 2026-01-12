@@ -288,7 +288,43 @@ export default function PDFToWordPage() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                <EducationalContent
+                    howItWorks={{
+                        title: "How to Convert PDF to Word",
+                        steps: [
+                            "Upload your PDF document to our secure conversion tool.",
+                            "Our intelligent engine extracts text, paragraphs, and formatting structure.",
+                            "Download your fully editable Word document (.docx) instantly."
+                        ]
+                    }}
+                    benefits={{
+                        title: "Editable Documents Made Easy",
+                        items: [
+                            { title: "Preserve Formatting", desc: "We maintain your original layout, paragraphs, and text flow as much as possible." },
+                            { title: "100% Private", desc: "Conversion happens right in your browser. Your confidential documents never leave your device." },
+                            { title: "Universal Compatibility", desc: "The generated .docx files work perfectly with Microsoft Word, Google Docs, and LibreOffice." },
+                            { title: "Fast & Free", desc: "Convert unlimited documents instantly without any watermarks or hidden fees." }
+                        ]
+                    }}
+                    faqs={[
+                        {
+                            question: "Will my document look exactly the same?",
+                            answer: "We strive for high accuracy. While complex layouts might need minor adjustments, we preserve paragraphs, lists, and basic formatting excellently."
+                        },
+                        {
+                            question: "Is it safe to convert sensitive files?",
+                            answer: "Absolutely. SimplyPDF runs entirely in your browser, so your files are never uploaded to any server. Your privacy is guaranteed."
+                        },
+                        {
+                             question: "Can I convert scanned PDFs?",
+                             answer: "For scanned documents (images), use our 'OCR PDF' tool instead. This tool is best for PDFs that already contain selectable text."
+                        }
+                    ]}
+                />
             </div>
         </div>
     );
 }
+
+import { EducationalContent } from "@/components/EducationalContent";
