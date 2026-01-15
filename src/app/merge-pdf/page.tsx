@@ -7,7 +7,7 @@ import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { Upload, File, X, Download, CheckCircle2, RefreshCw, AlertCircle, GripVertical, Trash2, Plus, Eye, RotateCw, Combine, Undo, Redo, ArrowUpAZ, ArrowDownZA, ArrowUpDown } from "lucide-react";
 import { PDFDocument, degrees } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
-import { PDFPreviewModal } from "@/components/PDFPreviewModal";
+import { PDFPreviewModal } from "@/components/pdf/PDFPreviewModal";
 import { useHistory } from "@/context/HistoryContext";
 import Image from "next/image";
 import {
@@ -16,8 +16,8 @@ import {
     ToolHeader,
     ToolCard,
     ProcessingState
-} from "@/components/ToolPageElements";
-import { EducationalContent } from "@/components/EducationalContent";
+} from "@/components/ui/ToolPageElements";
+import { EducationalContent } from "@/components/layout/EducationalContent";
 
 interface PageInfo {
     id: string;

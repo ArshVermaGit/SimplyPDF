@@ -1,6 +1,6 @@
 "use client";
 
-import { ToolPageLayout } from "@/components/ToolPageLayout";
+import { ToolPageLayout } from "@/components/layout/ToolPageLayout";
 import { imagesToPDF, uint8ArrayToBlob } from "@/lib/pdf-utils";
 
 export default function JpgToPDFPage() {

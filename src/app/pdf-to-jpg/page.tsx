@@ -6,7 +6,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, Image as ImageIcon, Eye } from "lucide-react";
 import { } from "@/lib/pdf-utils";
-import { PDFPreviewModal } from "@/components/PDFPreviewModal";
+import { PDFPreviewModal } from "@/components/pdf/PDFPreviewModal";
 import JSZip from "jszip";
 import Image from "next/image";
 import {
@@ -15,7 +15,7 @@ import {
     ToolHeader,
     ToolCard,
     ProcessingState
-} from "@/components/ToolPageElements";
+} from "@/components/ui/ToolPageElements";
 import { useHistory } from "@/context/HistoryContext";
 
 interface ConvertedImage {
@@ -324,4 +324,4 @@ export default function PDFToJPGPage() {
     );
 }
 
-import { EducationalContent } from "@/components/EducationalContent";
+import { EducationalContent } from "@/components/layout/EducationalContent";

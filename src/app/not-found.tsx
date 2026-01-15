@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Home } from "lucide-react";
-import { AnimatedBackground, FloatingDecorations } from "@/components/ToolPageElements";
+import { AnimatedBackground, FloatingDecorations } from "@/components/ui/ToolPageElements";
 
 export default function NotFound() {
     return (

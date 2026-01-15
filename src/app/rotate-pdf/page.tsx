@@ -10,15 +10,15 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { rotatePDF, uint8ArrayToBlob } from "@/lib/pdf-utils";
-import { PDFPreviewModal } from "@/components/PDFPreviewModal";
+import { PDFPreviewModal } from "@/components/pdf/PDFPreviewModal";
 import {
     AnimatedBackground,
     FloatingDecorations,
     ToolHeader,
     ToolCard,
     ProcessingState
-} from "@/components/ToolPageElements";
-import { EducationalContent } from "@/components/EducationalContent";
+} from "@/components/ui/ToolPageElements";
+import { EducationalContent } from "@/components/layout/EducationalContent";
 import { useHistory } from "@/context/HistoryContext";
 
 interface PageInfo {

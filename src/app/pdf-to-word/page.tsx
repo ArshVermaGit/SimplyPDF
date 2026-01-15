@@ -12,7 +12,7 @@ import {
     ToolHeader,
     ToolCard,
     ProcessingState
-} from "@/components/ToolPageElements";
+} from "@/components/ui/ToolPageElements";
 import { useHistory } from "@/context/HistoryContext";
 
 export default function PDFToWordPage() {
@@ -327,4 +327,4 @@ export default function PDFToWordPage() {
     );
 }
 
-import { EducationalContent } from "@/components/EducationalContent";
+import { EducationalContent } from "@/components/layout/EducationalContent";

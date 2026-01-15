@@ -7,7 +7,7 @@ import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, GripVertical, Trash2, Layers, Eye, Check, Undo, Redo } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import { uint8ArrayToBlob } from "@/lib/pdf-utils";
-import { PDFPreviewModal } from "@/components/PDFPreviewModal";
+import { PDFPreviewModal } from "@/components/pdf/PDFPreviewModal";
 import Image from "next/image";
 import {
     AnimatedBackground,
@@ -15,7 +15,7 @@ import {
     ToolHeader,
     ToolCard,
     ProcessingState
-} from "@/components/ToolPageElements";
+} from "@/components/ui/ToolPageElements";
 import { useHistory } from "@/context/HistoryContext";
 
 interface PageInfo {

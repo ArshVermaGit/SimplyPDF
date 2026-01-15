@@ -12,8 +12,8 @@ import {
     ToolHeader,
     ToolCard,
     ProcessingState
-} from "@/components/ToolPageElements";
-import { EducationalContent } from "@/components/EducationalContent";
+} from "@/components/ui/ToolPageElements";
+import { EducationalContent } from "@/components/layout/EducationalContent";
 import { useHistory } from "@/context/HistoryContext";
 
 export default function OCRPDFPage() {

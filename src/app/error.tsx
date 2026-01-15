@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { RefreshCw, AlertTriangle } from "lucide-react";
-import { AnimatedBackground } from "@/components/ToolPageElements";
+import { AnimatedBackground } from "@/components/ui/ToolPageElements";
 
 export default function Error({
     error,

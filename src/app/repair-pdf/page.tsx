@@ -10,7 +10,7 @@ import {
     ToolHeader,
     ToolCard,
     ProcessingState
-} from "@/components/ToolPageElements";
+} from "@/components/ui/ToolPageElements";
 import { useHistory } from "@/context/HistoryContext";
 import { downloadFile, formatFileSize } from "@/lib/pdf-utils";
 

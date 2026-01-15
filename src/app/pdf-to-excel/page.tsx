@@ -12,7 +12,7 @@ import {
     ToolHeader,
     ToolCard,
     ProcessingState
-} from "@/components/ToolPageElements";
+} from "@/components/ui/ToolPageElements";
 import { useHistory } from "@/context/HistoryContext";
 
 export default function PDFToExcelPage() {
@@ -462,4 +462,4 @@ export default function PDFToExcelPage() {
     );
 }
 
-import { EducationalContent } from "@/components/EducationalContent";
+import { EducationalContent } from "@/components/layout/EducationalContent";

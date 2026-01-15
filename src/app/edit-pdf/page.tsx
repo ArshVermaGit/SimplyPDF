@@ -13,8 +13,8 @@ import {
     ToolHeader,
     ToolCard,
     ProcessingState
-} from "@/components/ToolPageElements";
-import { EducationalContent } from "@/components/EducationalContent"; // Added
+} from "@/components/ui/ToolPageElements";
+import { EducationalContent } from "@/components/layout/EducationalContent"; // Added
 import { useHistory } from "@/context/HistoryContext";
 import Image from "next/image";
 import { Toolbar, Tool, ShapeType } from "./Toolbar";

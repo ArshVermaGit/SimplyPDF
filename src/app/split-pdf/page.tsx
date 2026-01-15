@@ -7,15 +7,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, Scissors, Maximize2, Check, LayoutGrid, Undo, Redo } from "lucide-react";
 import Image from "next/image";
 import { splitPDF, downloadAsZip, formatFileSize } from "@/lib/pdf-utils";
-import { PDFPreviewModal } from "@/components/PDFPreviewModal";
+import { PDFPreviewModal } from "@/components/pdf/PDFPreviewModal";
 import {
     AnimatedBackground,
     FloatingDecorations,
     ToolHeader,
     ToolCard,
     ProcessingState
-} from "@/components/ToolPageElements";
-import { EducationalContent } from "@/components/EducationalContent";
+} from "@/components/ui/ToolPageElements";
+import { EducationalContent } from "@/components/layout/EducationalContent";
 import { useHistory } from "@/context/HistoryContext";
 
 type SplitMode = "all" | "range" | "select" | "fixed_range" | "size_limit" | "manual";
