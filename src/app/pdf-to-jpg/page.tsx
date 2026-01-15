@@ -57,32 +57,31 @@ export default function PDFToJPGPage() {
         setImages([]);
 
         try {
-            const pdfjsLib = await import("pdfjs-dist");
-            const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-            pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-
-            const arrayBuffer = await pdfFile.arrayBuffer();
-            const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            const numPages = pdfDoc.numPages;
-
             setStatus("converting");
+            // Use the shared utility for consistent logic
+            const { extractImagesFromPDF } = await import("@/lib/pdf-utils");
+            
+            // Note: The shared utility returns Uint8Array, we need to convert to DataURL for display
+            // The utility handles the robust extraction/rendering logic now.
+            const extracted = await extractImagesFromPDF(pdfFile);
+            
             const convertedImages: ConvertedImage[] = [];
-
-            for (let i = 1; i <= numPages; i++) {
-                const page = await pdfDoc.getPage(i);
-                const viewport = page.getViewport({ scale: 2 }); // High quality
-                const canvas = document.createElement("canvas");
-                const context = canvas.getContext("2d")!;
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                await page.render({ canvasContext: context, viewport }).promise;
-
-                convertedImages.push({
-                    name: `page-${i}.jpg`,
-                    dataUrl: canvas.toDataURL("image/jpeg", 0.9),
+            for (let i = 0; i < extracted.length; i++) {
+                const img = extracted[i];
+                // img.data is Uint8Array, we ensure a clean buffer copy to avoid type conflicts
+                const blob = new Blob([img.data.buffer as ArrayBuffer], { type: "image/jpeg" });
+                const dataUrl = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.readAsDataURL(blob);
                 });
-
-                setProgress(Math.round((i / numPages) * 100));
+                
+                convertedImages.push({
+                    name: img.name,
+                    dataUrl: dataUrl
+                });
+                // Simulate progress since extraction is atomic in the lib currently
+                setProgress(Math.round(((i + 1) / extracted.length) * 100));
             }
 
             setImages(convertedImages);
