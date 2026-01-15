@@ -10,7 +10,7 @@
   <p align="center">
     The Ultimate, Privacy-Focused PDF Swiss-Army Knife
     <br />
-    <a href="https://simplypdf.com">View Demo</a>
+    <a href="https://simplypdf.vercel.app">View Demo</a>
     ·
     <a href="https://github.com/ArshVermaGit/SimplyPDF/issues">Report Bug</a>
     ·
