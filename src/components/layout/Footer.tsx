@@ -25,6 +25,8 @@ const tools = [
     { title: "PDF to Word", href: "/pdf-to-word" },
     { title: "Word to PDF", href: "/word-to-pdf" },
     { title: "PDF to Excel", href: "/pdf-to-excel" },
+    { title: "Repair PDF", href: "/repair-pdf" },
+    { title: "Edit Metadata", href: "/edit-metadata" },
 ];
 
 const resources = [
