@@ -2,6 +2,8 @@
 
 export const dynamic = "force-dynamic";
 
+import { PageInfo } from "@/types";
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -21,12 +23,6 @@ import {
 import { EducationalContent } from "@/components/layout/EducationalContent";
 import { useHistory } from "@/context/HistoryContext";
 
-interface PageInfo {
-    pageNumber: number;
-    image: string;
-    rotation: 0 | 90 | 180 | 270;
-    selected: boolean;
-}
 
 export default function RotatePDFPage() {
     const { addToHistory } = useHistory();
@@ -112,7 +108,7 @@ export default function RotatePDFPage() {
     const handleRotateIndividual = (index: number, delta: number) => {
         setPages(prev => prev.map((p, i) => {
             if (i === index) {
-                const newRotation = ((p.rotation + delta) % 360 + 360) % 360;
+                const newRotation = (((p.rotation ?? 0) + delta) % 360 + 360) % 360;
                 return { ...p, rotation: newRotation as 0 | 90 | 180 | 270 };
             }
             return p;
@@ -125,7 +121,7 @@ export default function RotatePDFPage() {
         setErrorMessage("");
 
         try {
-            const rotations = pages.map(p => (p.rotation + globalRotation) % 360);
+            const rotations = pages.map(p => ((p.rotation ?? 0) + globalRotation) % 360);
             const pdfBytes = await rotatePDF(file, rotations);
             setResultBlob(uint8ArrayToBlob(pdfBytes));
             setStatus("success");
@@ -289,7 +285,7 @@ export default function RotatePDFPage() {
                                                     <div
                                                         className="w-full h-full transition-transform duration-500 origin-center cursor-pointer"
                                                         onClick={() => { setPreviewPage(index); setPreviewOpen(true); }}
-                                                        style={{ transform: `rotate(${(page.rotation + globalRotation) % 360}deg)` }}
+                                                        style={{ transform: `rotate(${((page.rotation ?? 0) + globalRotation) % 360}deg)` }}
                                                     >
                                                         <Image
                                                             src={page.image}
@@ -458,7 +454,7 @@ export default function RotatePDFPage() {
                 images={pages.map(p => p.image)}
                 currentPage={previewPage}
                 onPageChange={setPreviewPage}
-                rotation={(pages[previewPage]?.rotation || 0) + globalRotation}
+                rotation={(pages[previewPage]?.rotation ?? 0) + globalRotation}
                 onDownload={handleRotate}
                 title="Rotate PDF Preview"
             />

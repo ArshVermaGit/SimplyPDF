@@ -2,6 +2,8 @@
 
 export const dynamic = "force-dynamic";
 
+import { PageInfo, FileInfo } from "@/types";
+
 import { useState, useRef } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { Upload, File, X, Download, CheckCircle2, RefreshCw, AlertCircle, GripVertical, Trash2, Plus, Eye, RotateCw, Combine, Undo, Redo, ArrowUpAZ, ArrowDownZA, ArrowUpDown } from "lucide-react";
@@ -19,24 +21,7 @@ import {
 } from "@/components/ui/ToolPageElements";
 import { EducationalContent } from "@/components/layout/EducationalContent";
 
-interface PageInfo {
-    id: string;
-    fileId: string;
-    fileName: string;
-    pageNumber: number;
-    image: string;
-    rotation: 0 | 90 | 180 | 270;
-    originalArrayBuffer: ArrayBuffer;
-    isHidden?: boolean;
-}
 
-interface FileInfo {
-    id: string;
-    name: string;
-    size: number;
-    pages: PageInfo[];
-    isExpanded: boolean;
-}
 
 export default function MergePDFPage() {
     const { addToHistory: recordAction } = useHistory();
@@ -206,7 +191,7 @@ export default function MergePDFPage() {
                     ...f,
                     pages: f.pages.map(p => {
                         if (p.id === pageId) {
-                            const newRotation = ((p.rotation + 90) % 360) as 0 | 90 | 180 | 270;
+                            const newRotation = (((p.rotation ?? 0) + 90) % 360) as 0 | 90 | 180 | 270;
                             return { ...p, rotation: newRotation };
                         }
                         return p;
@@ -305,6 +290,8 @@ export default function MergePDFPage() {
                 for (const pageInfo of fileInfo.pages) {
                     if (pageInfo.isHidden) continue;
 
+                    if (pageInfo.isHidden || !pageInfo.originalArrayBuffer || !pageInfo.fileId) continue;
+
                     let sourcePdf = loadedPdfs.get(pageInfo.fileId);
                     if (!sourcePdf) {
                         sourcePdf = await PDFDocument.load(pageInfo.originalArrayBuffer);
@@ -313,7 +300,7 @@ export default function MergePDFPage() {
 
                     const [copiedPage] = await mergedPdf.copyPages(sourcePdf, [pageInfo.pageNumber - 1]);
 
-                    if (pageInfo.rotation !== 0) {
+                    if (pageInfo.rotation) {
                         copiedPage.setRotation(degrees(pageInfo.rotation));
                     }
 
@@ -599,18 +586,19 @@ export default function MergePDFPage() {
                                                                                         <Eye className="w-4 h-4" />
                                                                                     </button>
                                                                                     <button
-                                                                                        onClick={() => rotatePage(file.id, page.id)}
+                                                                                        onClick={() => page.fileId && page.id && rotatePage(page.fileId, page.id)}
                                                                                         className="p-1.5 bg-white rounded-lg shadow-lg hover:scale-110 transition-transform"
                                                                                     >
                                                                                         <RotateCw className="w-4 h-4" />
                                                                                     </button>
                                                                                     <button
-                                                                                        onClick={() => removePage(file.id, page.id)}
+                                                                                        onClick={() => page.fileId && page.id && removePage(page.fileId, page.id)}
                                                                                         className="p-1.5 bg-red-500 text-white rounded-lg shadow-lg hover:scale-110 transition-transform"
                                                                                     >
                                                                                         <Trash2 className="w-4 h-4" />
                                                                                     </button>
                                                                                 </div>
+
                                                                                 <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-sm text-[10px] text-white rounded">
                                                                                     Page {page.pageNumber}
                                                                                 </div>

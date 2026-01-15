@@ -79,6 +79,26 @@ To get a local copy up and running, follow these simple steps.
     npm run dev
     ```
 
+### Project Structure
+
+```bash
+simply-pdf/
+├── src/
+│   ├── app/                 # Next.js App Router (pages and tools)
+│   │   ├── merge-pdf/       # Merge Tool
+│   │   ├── split-pdf/       # Split Tool
+│   │   └── ...
+│   ├── components/
+│   │   ├── ui/              # Reusable UI components
+│   │   ├── layout/          # Layout components
+│   │   ├── pdf/             # PDF-specific components
+│   │   └── auth/            # Authentication components
+│   ├── lib/                 # Utilities and helpers
+│   └── types/               # Shared TypeScript definitions
+├── public/                  # Static assets
+└── ...
+```
+
 <!-- DOCUMENTATION -->
 
 ## 📚 Documentation

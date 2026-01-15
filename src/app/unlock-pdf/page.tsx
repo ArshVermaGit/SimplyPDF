@@ -2,6 +2,8 @@
 
 export const dynamic = "force-dynamic";
 
+import { PageInfo } from "@/types";
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -22,10 +24,6 @@ import { EducationalContent } from "@/components/layout/EducationalContent";
 import { useHistory } from "@/context/HistoryContext";
 
 
-interface PageInfo {
-    pageNumber: number;
-    image: string;
-}
 
 export default function UnlockPDFPage() {
     const { addToHistory } = useHistory();

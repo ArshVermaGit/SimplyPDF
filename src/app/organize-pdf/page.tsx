@@ -2,6 +2,8 @@
 
 export const dynamic = "force-dynamic";
 
+import { PageInfo } from "@/types";
+
 import { useState } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, GripVertical, Trash2, Layers, Eye, Check, Undo, Redo } from "lucide-react";
@@ -18,12 +20,6 @@ import {
 } from "@/components/ui/ToolPageElements";
 import { useHistory } from "@/context/HistoryContext";
 
-interface PageInfo {
-    id: string;
-    pageNumber: number;
-    selected: boolean;
-    image: string;
-}
 
 export default function OrganizePDFPage() {
     const { addToHistory } = useHistory();
@@ -381,7 +377,7 @@ export default function OrganizePDFPage() {
 
                                                 {/* Selection Checkbox */}
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); togglePage(page.id); }}
+                                                    onClick={(e) => { e.stopPropagation(); page.id && togglePage(page.id); }}
                                                     className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${page.selected
                                                         ? "bg-black border-black text-white"
                                                         : "bg-white border-gray-300 hover:border-black"
@@ -392,7 +388,7 @@ export default function OrganizePDFPage() {
 
                                                 {/* Delete Button */}
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); removePage(page.id); }}
+                                                    onClick={(e) => { e.stopPropagation(); page.id && removePage(page.id); }}
                                                     className="absolute bottom-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
                                                 >
                                                     <Trash2 className="w-4 h-4" />

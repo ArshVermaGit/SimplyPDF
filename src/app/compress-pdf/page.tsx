@@ -2,6 +2,8 @@
 
 export const dynamic = "force-dynamic";
 
+import { PageInfo } from "@/types";
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -24,10 +26,6 @@ import Image from "next/image";
 
 type CompressionLevel = 'low' | 'recommended' | 'extreme';
 
-interface PageInfo {
-    pageNumber: number;
-    image: string;
-}
 
 export default function CompressPDFPage() {
     const { addToHistory } = useHistory();

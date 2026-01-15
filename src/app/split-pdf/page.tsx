@@ -2,6 +2,8 @@
 
 export const dynamic = "force-dynamic";
 
+import { PageInfo } from "@/types";
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, File, Download, CheckCircle2, RefreshCw, AlertCircle, Scissors, Maximize2, Check, LayoutGrid, Undo, Redo } from "lucide-react";
@@ -20,11 +22,6 @@ import { useHistory } from "@/context/HistoryContext";
 
 type SplitMode = "all" | "range" | "select" | "fixed_range" | "size_limit" | "manual";
 
-interface PageInfo {
-    pageNumber: number;
-    image: string;
-    selected: boolean;
-}
 
 interface VisualGroup {
     id: string;
