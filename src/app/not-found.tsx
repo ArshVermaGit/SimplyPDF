@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Home } from "lucide-react";
+import { Home } from "lucide-react";
 import { AnimatedBackground, FloatingDecorations } from "@/components/ToolPageElements";
 
 export default function NotFound() {
@@ -14,7 +14,7 @@ export default function NotFound() {
                 <h1 className="text-9xl font-bold bg-clip-text text-transparent bg-linear-to-b from-gray-900 to-gray-600">404</h1>
                 <h2 className="text-3xl font-semibold mb-6 text-gray-800">Page Not Found</h2>
                 <p className="text-gray-500 max-w-md mx-auto mb-10 text-lg">
-                    The page you are looking for doesn't exist or has been moved.
+                    The page you are looking for doesn&apos;t exist or has been moved.
                 </p>
                 
                 <Link 
