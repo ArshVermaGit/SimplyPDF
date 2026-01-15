@@ -6,7 +6,7 @@ Need help with SimplyPDF? We're here for you!
 
 ### 🔍 Check the FAQ
 
-The fastest way to get answers is often our [FAQ page](https://simplypdf.com/faq) or the FAQ section in our repository.
+The fastest way to get answers is often our [FAQ page](https://simplypdf.vercel.app/faq) or the FAQ section in our repository.
 
 ### 🐛 Report a Bug
 
