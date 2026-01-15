@@ -1,5 +1,4 @@
 import { PDFDocument } from 'pdf-lib';
-import { uint8ArrayToBlob } from './utils';
 
 /**
  * Convert images (JPG/PNG) to a single PDF
