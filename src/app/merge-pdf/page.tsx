@@ -586,13 +586,13 @@ export default function MergePDFPage() {
                                                                                         <Eye className="w-4 h-4" />
                                                                                     </button>
                                                                                     <button
-                                                                                        onClick={() => page.fileId && page.id && rotatePage(page.fileId, page.id)}
+                                                                                        onClick={() => { if (page.fileId && page.id) rotatePage(page.fileId, page.id); }}
                                                                                         className="p-1.5 bg-white rounded-lg shadow-lg hover:scale-110 transition-transform"
                                                                                     >
                                                                                         <RotateCw className="w-4 h-4" />
                                                                                     </button>
                                                                                     <button
-                                                                                        onClick={() => page.fileId && page.id && removePage(page.fileId, page.id)}
+                                                                                        onClick={() => { if (page.fileId && page.id) removePage(page.fileId, page.id); }}
                                                                                         className="p-1.5 bg-red-500 text-white rounded-lg shadow-lg hover:scale-110 transition-transform"
                                                                                     >
                                                                                         <Trash2 className="w-4 h-4" />
