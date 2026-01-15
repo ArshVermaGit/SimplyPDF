@@ -42,4 +42,17 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 - Follow the existing folder structure in `src/`.
 - Ensure components are modular and reusable.
 
+## Directory Structure
+
+Understanding the project structure will help you place your contributions correctly:
+
+- **`src/app`**: Application routes and pages.
+- **`src/components`**: Reusable UI components.
+  - **`layout`**: Structural components (Header, Footer, ToolPageLayout).
+  - **`ui`**: Generic UI elements (ToolCard, ToolPageElements).
+  - **`pdf`**: PDF-specific components (Preview, Thumbnails).
+  - **`auth`**: Authentication components (Providers, Modals).
+- **`src/lib`**: Utility functions.
+  - **`pdf`**: PDF manipulation logic (Modularized).
+
 Thank you for your contributions!
