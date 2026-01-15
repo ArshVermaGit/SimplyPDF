@@ -27,6 +27,7 @@ import {
   History,
   LogOut,
   User,
+  Wrench,
 } from "lucide-react";
 
 const tools = [
@@ -46,6 +47,8 @@ const tools = [
   { title: "PDF to Word", icon: FileText, href: "/pdf-to-word" },
   { title: "Word to PDF", icon: FileUp, href: "/word-to-pdf" },
   { title: "PDF to Excel", icon: FileDown, href: "/pdf-to-excel" },
+  { title: "Repair PDF", icon: Wrench, href: "/repair-pdf" },
+  { title: "Edit Metadata", icon: FileText, href: "/edit-metadata" },
 ];
 
 export default function Header() {
