@@ -20,27 +20,47 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 - **Use the template**: Use the Feature Request template when opening an issue for an enhancement.
 - **Explain the "Why"**: Describe why this enhancement would be useful to most users.
 
-### Pull Requests
+## Development Process
 
-1.  **Fork the repository**.
-2.  **Create a branch**: Use a descriptive name like `feature/new-tool` or `fix/button-alignment`.
-3.  **Implement your changes**: Ensure your code follows the existing style and pass all linting checks.
-4.  **Add tests**: If applicable, add tests for your changes.
-5.  **Submit the PR**: Fill out the Pull Request template completely.
+1.  **Fork the repository** on GitHub.
+2.  **Clone your fork** locally:
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/SimplyPDF.git
+    cd SimplyPDF
+    ```
+3.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+4.  **Create a branch** for your feature or fix. Use a descriptive name:
+    - `feat/new-tool-name`
+    - `fix/merge-pdf-bug`
+    - `docs/update-readme`
+5.  **Start coding!** Run the dev server:
+    ```bash
+    npm run dev
+    ```
 
-## Development Environment
+## Coding Standards
 
-1.  Clone your fork.
-2.  Run `npm install`.
-3.  Run `npm run dev` to start the development server.
-4.  Make sure to set up your `.env.local` if needed for specific features.
+To ensure consistency and quality, we enforce strict standards:
 
-## Style Guide
+- **TypeScript**: We use strict TypeScript. No `any` types allowed. Use shared types from `src/types/index.ts` where possible.
+- **Formatting**: We use **Prettier**. You must format your code before committing:
+  ```bash
+  npm run format
+  ```
+- **Linting**: We use **ESLint**. Ensure your code passes all lint checks:
+  ```bash
+  npm run lint
+  ```
 
-- We use **TypeScript** for type safety.
-- We use **Tailwind CSS** for styling.
-- Follow the existing folder structure in `src/`.
-- Ensure components are modular and reusable.
+  - Note: If you encounter errors, try `npm run lint:fix` to auto-correct some issues.
+- **Styling**: Use **Tailwind CSS**. Avoid custom CSS classes unless absolutely necessary.
+- **Commits**: Follow [Conventional Commits](https://www.conventionalcommits.org/).
+  - `feat: add rotate pdf tool`
+  - `fix: resolve crash on upload`
+  - `style: format code with prettier`
 
 ## Directory Structure
 
