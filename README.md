@@ -31,6 +31,18 @@
 
 <br />
 
+### Tech Stack
+
+- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **Animation**: [Framer Motion](https://www.framer.com/motion/)
+- **PDF Processing**: [pdf-lib](https://pdf-lib.js.org/) & [pdf.js](https://mozilla.github.io/pdf.js/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Host**: [Vercel](https://vercel.com/)
+
+<br />
+
 <!-- ABOUT THE PROJECT -->
 
 ## ✨ About The Project
