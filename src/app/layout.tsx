@@ -28,8 +28,32 @@ const alexBrush = Alex_Brush({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://simplypdf.vercel.app'),
-  title: "SimplyPDF | The Easiest PDF Tool",
+  title: {
+    default: "SimplyPDF | The Easiest PDF Tool",
+    template: "%s | SimplyPDF"
+  },
   description: "Merge, split, compress, and convert PDFs with SimplyPDF. The premium, fast, and secure PDF management tool.",
+  applicationName: "SimplyPDF",
+  authors: [{ name: "SimplyPDF Team" }],
+  keywords: ["PDF", "Merge PDF", "Split PDF", "Compress PDF", "PDF Converter", "PDF Tools"],
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/icon.png',
+  },
+  openGraph: {
+    title: "SimplyPDF | The Easiest PDF Tool",
+    description: "Merge, split, compress, and convert PDFs with SimplyPDF. The premium, fast, and secure PDF management tool.",
+    url: 'https://simplypdf.vercel.app',
+    siteName: 'SimplyPDF',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "SimplyPDF | The Easiest PDF Tool",
+    description: "Merge, split, compress, and convert PDFs with SimplyPDF. The premium, fast, and secure PDF management tool.",
+  },
   other: {
     "google-adsense-account": "ca-pub-4266443141083729",
   },
@@ -40,10 +64,30 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'SimplyPDF',
+    url: process.env.NEXT_PUBLIC_BASE_URL || 'https://simplypdf.vercel.app',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://simplypdf.vercel.app'}/?q={search_term_string}`
+      },
+      'query-input': 'required name=search_term_string'
+    }
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
-      <body 
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
+      <body
         suppressHydrationWarning
         className={`${inter.variable} ${greatVibes.variable} ${alexBrush.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
