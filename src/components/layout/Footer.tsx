@@ -8,33 +8,24 @@ import {
     ArrowUpRight,
 } from "lucide-react";
 
-const tools = [
-    { title: "Merge PDF", href: "/merge-pdf" },
-    { title: "Split PDF", href: "/split-pdf" },
-    { title: "Compress PDF", href: "/compress-pdf" },
-    { title: "Rotate PDF", href: "/rotate-pdf" },
-    { title: "JPG to PDF", href: "/jpg-to-pdf" },
-    { title: "PDF to JPG", href: "/pdf-to-jpg" },
-    { title: "Unlock PDF", href: "/unlock-pdf" },
-    { title: "Protect PDF", href: "/protect-pdf" },
-    { title: "Organize PDF", href: "/organize-pdf" },
-    { title: "Watermark", href: "/watermark-pdf" },
-    { title: "Sign PDF", href: "/sign-pdf" },
-    { title: "Edit PDF", href: "/edit-pdf" },
-    { title: "OCR PDF", href: "/ocr-pdf" },
-    { title: "PDF to Word", href: "/pdf-to-word" },
-    { title: "Word to PDF", href: "/word-to-pdf" },
-    { title: "PDF to Excel", href: "/pdf-to-excel" },
-    { title: "Repair PDF", href: "/repair-pdf" },
-    { title: "Edit Metadata", href: "/edit-metadata" },
+const product = [
+    { title: "Features", href: "/features" },
+    { title: "How It Works", href: "/how-it-works" },
 ];
 
-const resources = [
-    { title: "About", href: "/about" },
-    { title: "Privacy", href: "/privacy" },
-    { title: "Terms", href: "/terms" },
+const legal = [
+    { title: "Privacy Policy", href: "/privacy" },
+    { title: "Terms of Service", href: "/terms" },
+    { title: "Disclaimer", href: "/disclaimer" },
+    { title: "Cookie Policy", href: "/cookie-policy" },
+];
+
+const company = [
+    { title: "About Us", href: "/about" },
     { title: "Contact", href: "/contact" },
+    { title: "Support", href: "/support" },
     { title: "FAQ", href: "/faq" },
+    { title: "Changelog", href: "/changelog" },
 ];
 
 const socials = [
@@ -80,19 +71,19 @@ export default function Footer() {
                         </div>
                     </div>
 
-                    {/* Tools Column */}
+                    {/* Product Column */}
                     <div>
                         <h4 className="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-6">
-                            Popular Tools
+                            Product
                         </h4>
                         <ul className="space-y-3">
-                            {tools.slice(0, 6).map((tool) => (
-                                <li key={tool.href}>
+                            {product.map((item) => (
+                                <li key={item.href}>
                                     <Link
-                                        href={tool.href}
+                                        href={item.href}
                                         className="text-gray-300 hover:text-white transition-colors inline-flex items-center gap-1 group text-sm"
                                     >
-                                        {tool.title}
+                                        {item.title}
                                         <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all" />
                                     </Link>
                                 </li>
@@ -100,47 +91,38 @@ export default function Footer() {
                         </ul>
                     </div>
 
-                    {/* More Tools Column */}
+                    {/* Legal Column */}
                     <div>
                         <h4 className="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-6">
-                            More Tools
+                            Legal
                         </h4>
                         <ul className="space-y-3">
-                            {tools.slice(6).map((tool) => (
-                                <li key={tool.href}>
+                            {legal.map((item) => (
+                                <li key={item.href}>
                                     <Link
-                                        href={tool.href}
-                                        className="text-gray-300 hover:text-white transition-colors inline-flex items-center gap-1 group text-sm"
+                                        href={item.href}
+                                        className="text-gray-300 hover:text-white transition-colors text-sm"
                                     >
-                                        {tool.title}
-                                        <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all" />
+                                        {item.title}
                                     </Link>
                                 </li>
                             ))}
-                            <li>
-                                <Link
-                                    href="/#tools"
-                                    className="text-white font-medium hover:underline inline-flex items-center gap-1 text-sm"
-                                >
-                                    View All Tools →
-                                </Link>
-                            </li>
                         </ul>
                     </div>
 
-                    {/* Resources Column */}
+                    {/* Company Column */}
                     <div>
                         <h4 className="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-6">
                             Company
                         </h4>
                         <ul className="space-y-3">
-                            {resources.map((resource) => (
-                                <li key={resource.title}>
+                            {company.map((item) => (
+                                <li key={item.href}>
                                     <Link
-                                        href={resource.href}
+                                        href={item.href}
                                         className="text-gray-300 hover:text-white transition-colors text-sm"
                                     >
-                                        {resource.title}
+                                        {item.title}
                                     </Link>
                                 </li>
                             ))}
