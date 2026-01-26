@@ -10,8 +10,8 @@ const contactMethods = [
         icon: Mail,
         title: "Email",
         description: "Best for detailed inquiries",
-        value: "Arshverma.dev@gmail.com",
-        href: "mailto:Arshverma.dev@gmail.com",
+        value: "arshverma.dev@gmail.com",
+        href: "mailto:arshverma.dev@gmail.com",
         color: "hover:bg-red-50 hover:border-red-200"
     },
     {
@@ -70,7 +70,7 @@ export default function ContactPage() {
         setIsSubmitting(true);
 
         // Create mailto link with form data
-        const mailtoLink = `mailto:Arshverma.dev@gmail.com?subject=${encodeURIComponent(formData.subject || "SimplyPDF Contact")}&body=${encodeURIComponent(
+        const mailtoLink = `mailto:arshverma.dev@gmail.com?subject=${encodeURIComponent(formData.subject || "SimplyPDF Contact")}&body=${encodeURIComponent(
             `Name: ${formData.name}\nEmail: ${formData.email}\n\n${formData.message}`
         )}`;
 
