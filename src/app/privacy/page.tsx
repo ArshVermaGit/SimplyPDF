@@ -99,7 +99,7 @@ In compliance with the Children's Online Privacy Protection Act (COPPA):
 - If we become aware that we have inadvertently collected personal information from a child under 13, we will take steps to delete that information
 
 **Parental Rights:**
-If you are a parent or guardian and believe your child has provided us with personal information, please contact us at Arshverma.dev@gmail.com so we can delete the information.
+If you are a parent or guardian and believe your child has provided us with personal information, please contact us at arshverma.dev@gmail.com so we can delete the information.
 
 **Note for Parents:**
 We recommend parents supervise their children's online activities and consider using parental control tools available from online services and software manufacturers.`
@@ -133,7 +133,7 @@ You have additional rights including the right to object to processing, right to
 **For California Users (CCPA):**
 You have the right to know what personal information is collected, request deletion, and opt-out of the sale of personal information (we do not sell personal information).
 
-To exercise any of these rights, contact us at: Arshverma.dev@gmail.com`
+To exercise any of these rights, contact us at: arshverma.dev@gmail.com`
     },
     {
         icon: AlertTriangle,
@@ -144,7 +144,7 @@ You are advised to review this Privacy Policy periodically for any changes. Chan
 
 **Contact Us:**
 If you have any questions about this Privacy Policy, please contact us at:
-- Email: Arshverma.dev@gmail.com
+- Email: arshverma.dev@gmail.com
 - Website: https://simplypdf.vercel.app/contact`
     }
 ];
