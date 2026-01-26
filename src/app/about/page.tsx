@@ -19,8 +19,8 @@ const socials = [
     {
         name: "Email",
         icon: Mail,
-        href: "mailto:Arshverma.dev@gmail.com",
-        label: "Arshverma.dev@gmail.com",
+        href: "mailto:arshverma.dev@gmail.com",
+        label: "arshverma.dev@gmail.com",
         color: "hover:bg-red-50 hover:text-red-600 hover:border-red-200",
     },
     {
@@ -141,7 +141,7 @@ export default function AboutPage() {
                                 <ExternalLink className="w-4 h-4" />
                             </Link>
                             <Link
-                                href="mailto:Arshverma.dev@gmail.com"
+                                href="mailto:arshverma.dev@gmail.com"
                                 className="btn-secondary inline-flex items-center gap-2"
                             >
                                 <Mail className="w-4 h-4" />
