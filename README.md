@@ -139,6 +139,7 @@ Please check our [Contributing Guide](CONTRIBUTING.md) for details on our code o
 **Arsh Verma**
 
 - **Portfolio**: [arshcreates.vercel.app](https://arshcreates.vercel.app)
+- **Email**: [arshverma.dev@gmail.com](mailto:arshverma.dev@gmail.com)
 - **GitHub**: [@ArshVermaGit](https://github.com/ArshVermaGit)
 - **LinkedIn**: [Arsh Verma](https://www.linkedin.com/in/arshvermadev/)
 - **X (Twitter)**: [@TheArshVerma](https://x.com/TheArshVerma)
