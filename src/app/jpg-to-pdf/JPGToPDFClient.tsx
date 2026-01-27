@@ -2,6 +2,7 @@
 
 import { ToolPageLayout } from "@/components/layout/ToolPageLayout";
 import { imagesToPDF, uint8ArrayToBlob } from "@/lib/pdf-utils";
+import { Image as ImageIcon } from "lucide-react";
 
 export function JPGToPDFClient() {
     const handleConvert = async (files: File[]): Promise<Blob | null> => {
@@ -18,6 +19,7 @@ export function JPGToPDFClient() {
         <ToolPageLayout
             title="JPG to PDF"
             description="Convert JPG, PNG images to PDF. Select multiple images to combine into one PDF."
+            icon={ImageIcon}
             actionButtonText="Convert to PDF"
             processingText="Converting images to PDF..."
             successTitle="Conversion Complete!"
