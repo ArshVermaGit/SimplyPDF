@@ -26,6 +26,7 @@ const company = [
     { title: "Support", href: "/support" },
     { title: "FAQ", href: "/faq" },
     { title: "Changelog", href: "/changelog" },
+    { title: "Sitemap", href: "/sitemap" },
 ];
 
 const socials = [
