@@ -21,6 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         'features',
         'how-it-works',
         'support',
+        'sitemap',
     ]
 
     // 3. All PDF Tools (High Priority - Main Logic)
