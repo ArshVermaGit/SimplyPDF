@@ -29,21 +29,25 @@ const alexBrush = Alex_Brush({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://simplypdf.vercel.app'),
   title: {
-    default: "SimplyPDF | The Easiest PDF Tool",
+    default: "SimplyPDF | #1 Free Online PDF Editor, Merger & Converter",
     template: "%s | SimplyPDF"
   },
-  description: "Merge, split, compress, and convert PDFs with SimplyPDF. The premium, fast, and secure PDF management tool.",
+  description: "SimplyPDF is the world's most premium, free online PDF tool. Edit, merge, split, compress, and convert PDFs 100% locally in your browser. Fast, secure, and no sign-up required.",
   applicationName: "SimplyPDF",
   authors: [{ name: "SimplyPDF Team" }],
-  keywords: ["PDF", "Merge PDF", "Split PDF", "Compress PDF", "PDF Converter", "PDF Tools"],
+  keywords: [
+    "PDF Editor", "Merge PDF", "Compress PDF", "PDF Converter", "Split PDF", 
+    "Edit PDF Online", "Sign PDF", "PDF to Word", "JPG to PDF", "OCR PDF", 
+    "Free PDF Tools", "Secure PDF processing", "No upload PDF tool"
+  ],
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
     apple: '/icon.png',
   },
   openGraph: {
-    title: "SimplyPDF | The Easiest PDF Tool",
-    description: "Merge, split, compress, and convert PDFs with SimplyPDF. The premium, fast, and secure PDF management tool.",
+    title: "SimplyPDF | The Easiest & Most Secure PDF Tool",
+    description: "The premium way to manage your PDFs. 100% browser-based editing, merging, and converting. Your files never leave your device.",
     url: 'https://simplypdf.vercel.app',
     siteName: 'SimplyPDF',
     locale: 'en_US',
@@ -51,8 +55,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "SimplyPDF | The Easiest PDF Tool",
-    description: "Merge, split, compress, and convert PDFs with SimplyPDF. The premium, fast, and secure PDF management tool.",
+    title: "SimplyPDF | #1 Free Online PDF Tools",
+    description: "Premium PDF editing and management, 100% private and secure. No uploads, no limits.",
   },
   other: {
     "google-adsense-account": "ca-pub-4266443141083729",
