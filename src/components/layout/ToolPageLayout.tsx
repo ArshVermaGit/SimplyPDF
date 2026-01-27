@@ -17,7 +17,7 @@ import { useHistory } from "@/context/HistoryContext";
 interface ToolPageLayoutProps {
     title: string;
     description: string;
-    icon?: React.ReactNode;
+    icon?: React.ElementType | React.ReactNode;
     accept?: string;
     multiple?: boolean;
     allowReorder?: boolean;
