@@ -89,8 +89,14 @@ export default function Header() {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center font-bold text-xl transition-transform group-hover:scale-110 group-hover:rotate-3">
-              S
+            <div className="relative w-10 h-10 transition-transform group-hover:scale-110 group-hover:rotate-3">
+              <Image
+                src="/logo.png"
+                alt="SimplyPDF Logo"
+                fill
+                className="rounded-xl object-contain"
+                priority
+              />
             </div>
             <span className="text-xl font-bold tracking-tight">
               Simply<span className="text-gray-400">PDF</span>
