@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
     Github,
     Twitter,
@@ -46,8 +47,13 @@ export default function Footer() {
                     {/* Brand Column */}
                     <div className="lg:col-span-1">
                         <Link href="/" className="flex items-center gap-2 mb-6 group">
-                            <div className="w-10 h-10 bg-white text-black rounded-xl flex items-center justify-center font-bold text-xl transition-transform group-hover:scale-110 group-hover:rotate-3">
-                                S
+                            <div className="relative w-10 h-10 transition-transform group-hover:scale-110 group-hover:rotate-3">
+                                <Image
+                                    src="/logo.png"
+                                    alt="SimplyPDF Logo"
+                                    fill
+                                    className="rounded-xl object-contain bg-white"
+                                />
                             </div>
                             <span className="text-xl font-bold tracking-tight">
                                 Simply<span className="text-gray-400">PDF</span>
