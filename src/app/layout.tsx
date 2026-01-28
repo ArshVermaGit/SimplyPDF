@@ -41,9 +41,9 @@ export const metadata: Metadata = {
     "Free PDF Tools", "Secure PDF processing", "No upload PDF tool"
   ],
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/icon.png',
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/apple-icon.png',
   },
   openGraph: {
     title: "SimplyPDF | The Easiest & Most Secure PDF Tool",
