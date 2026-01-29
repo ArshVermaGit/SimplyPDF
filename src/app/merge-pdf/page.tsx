@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { MergePDFClient } from './MergePDFClient';
+import { MergePDFClient } from '@/components/pages/merge-pdf/MergePDFClient';
 
 export const metadata: Metadata = {
   title: 'Merge PDF Online | Combine PDF Files for Free',

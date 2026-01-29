@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { SplitPDFClient } from './SplitPDFClient';
+import { SplitPDFClient } from '@/components/pages/split-pdf/SplitPDFClient';
 
 export const metadata: Metadata = {
   title: 'Split PDF Online | Separate PDF Pages for Free',

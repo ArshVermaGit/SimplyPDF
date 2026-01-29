@@ -52,11 +52,20 @@ export const metadata: Metadata = {
     siteName: 'SimplyPDF',
     locale: 'en_US',
     type: 'website',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'SimplyPDF - Free Online PDF Tools',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: "SimplyPDF | #1 Free Online PDF Tools",
     description: "Premium PDF editing and management, 100% private and secure. No uploads, no limits.",
+    images: ['/og-image.png'],
   },
   other: {
     "google-adsense-account": "ca-pub-4266443141083729",

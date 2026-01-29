@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { UnlockPDFClient } from './UnlockPDFClient';
+import { UnlockPDFClient } from '@/components/pages/unlock-pdf/UnlockPDFClient';
 
 export const metadata: Metadata = {
   title: 'Unlock PDF Online | Remove PDF Password & Restrictions',

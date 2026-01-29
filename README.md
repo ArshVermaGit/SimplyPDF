@@ -1,8 +1,10 @@
+<a name="readme-top"></a>
+
 <!-- HEADER -->
 <br />
 <div align="center">
-  <a href="https://github.com/ArshVermaGit/SimplyPDF">
-    <img src="public/logo.png" alt="Logo" width="80" height="80">
+  <a href="https://simplypdf.vercel.app">
+    <img src="public/logo.png" alt="SimplyPDF Logo" width="100" height="100">
   </a>
 
   <h3 align="center">SimplyPDF</h3>
@@ -10,36 +12,27 @@
   <p align="center">
     The Ultimate, Privacy-Focused PDF Swiss-Army Knife
     <br />
+    <a href="https://simplypdf.vercel.app"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
     <a href="https://simplypdf.vercel.app">View Demo</a>
     ·
-    <a href="https://github.com/ArshVermaGit/SimplyPDF/issues">Report Bug</a>
+    <a href="https://github.com/ArshVermaGit/SimplyPDF/issues/new?template=bug_report.md">Report Bug</a>
     ·
-    <a href="https://github.com/ArshVermaGit/SimplyPDF/issues">Request Feature</a>
+    <a href="https://github.com/ArshVermaGit/SimplyPDF/issues/new?template=feature_request.md">Request Feature</a>
   </p>
 </div>
 
 <!-- BADGES -->
 <div align="center">
 
-[![Next.js](https://img.shields.io/badge/Next.js-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js_16-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://github.com/ArshVermaGit/SimplyPDF/blob/main/LICENSE)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_4.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](CONTRIBUTING.md)
 
 </div>
-
-<br />
-
-### Tech Stack
-
-- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
-- **Animation**: [Framer Motion](https://www.framer.com/motion/)
-- **PDF Processing**: [pdf-lib](https://pdf-lib.js.org/) & [pdf.js](https://mozilla.github.io/pdf.js/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Host**: [Vercel](https://vercel.com/)
 
 <br />
 
@@ -47,17 +40,36 @@
 
 ## ✨ About The Project
 
+[![SimplyPDF Preview](public/og-image.png)](https://simplypdf.vercel.app)
+
 **SimplyPDF** is a premium, high-performance web application designed to redefine how you interact with PDFs. Built with a hyper-polished, responsive aesthetic, it offers a seamless, desktop-class experience for editing, converting, and managing documents directly in your browser.
 
-Unlike other tools that upload your data to remote servers, SimplyPDF operates **entirely client-side**. Your sensitive documents never leave your device, ensuring maximum privacy and security without compromising on power or features.
+Unlike other tools that upload your data to remote servers, **SimplyPDF operates entirely client-side**. Your sensitive documents never leave your device, ensuring maximum privacy and security without compromising on power or features.
 
-### Key Features
+### 💎 Key Features
 
-- ⚡ **Client-Side Processing**: Zero server uploads. All magic happens locally in your browser for 100% privacy.
-- 💎 **Premium Design**: A stunning, responsive UI built with **Tailwind CSS 4**, featuring glassmorphism, micro-interactions, and fluid animations.
-- 📝 **Advanced Editor**: Full suite of professional tools—add text, signatures, shapes, and images with ease.
-- 🛠️ **16+ Powerful Tools**: Merge, Split, Compress, Convert (Word/Excel/JPG), Organize, Watermark, and more.
-- 🔒 **Enterprise Grade**: Secure by design with no data retention.
+- **100% Client-Side Privacy**: Powered by WebAssembly, your files are processed locally. No uploads, ever.
+- **Hyper-Premium UI**: A stunning interface built with **Tailwind CSS 4** and **Framer Motion**, featuring glassmorphism and fluid micro-interactions.
+- **16+ Professional Tools**: Merge, Split, Compress, Convert (Word/Excel/JPG), OCR, Sign, Protect, and more.
+- **PWA Ready**: Installable as a native app on desktop and mobile.
+- **Open Source**: Built for the community, by the community.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- TECH STACK -->
+
+## 🛠️ The Engine Room
+
+We use the absolute latest web technologies to deliver native-like performance in the browser.
+
+- **[Next.js 16](https://nextjs.org/)**: The React Framework for the Web (App Router).
+- **[TypeScript](https://www.typescriptlang.org/)**: For type-safe, maintainable code.
+- **[Tailwind CSS 4](https://tailwindcss.com/)**: For a modern, high-performance design system.
+- **[Framer Motion](https://www.framer.com/motion/)**: For complex, butter-smooth animations.
+- **[WebAssembly (Wasm)](https://webassembly.org/)**: Powering heavy PDF operations via `qpdf` and `pdf-lib`.
+- **[Lucide React](https://lucide.dev/)**: Beautiful, consistent iconography.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- GETTING STARTED -->
 
@@ -67,70 +79,73 @@ To get a local copy up and running, follow these simple steps.
 
 ### Prerequisites
 
-- **Node.js** (v18 or higher)
-- **npm** or yarn
+- Node.js 18+ installed on your machine.
 
 ### Installation
 
-1.  **Clone the repo**
+1.  **Fork** the repository.
+2.  **Clone** your fork:
     ```sh
-    git clone https://github.com/ArshVermaGit/SimplyPDF.git
+    git clone https://github.com/YOUR_USERNAME/SimplyPDF.git
+    cd SimplyPDF
     ```
-2.  **Install dependencies**
+3.  **Install dependencies**:
     ```sh
     npm install
+    # or yarn install
     ```
-3.  **Configure Environment**
-    Create a `.env.local` file based on the following variables:
+4.  **Set up Environment**:
+    Rename `.env.example` to `.env.local` (or create one):
     ```sh
     NEXT_PUBLIC_BASE_URL=http://localhost:3000
-    NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+    # Optional: Add Google Client ID for auth features
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_client_id
     ```
-4.  **Start the server**
+5.  **Start Development Server**:
     ```sh
     npm run dev
     ```
 
-### Project Structure
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-```bash
-simply-pdf/
-├── src/
-│   ├── app/                 # Next.js App Router (pages and tools)
-│   │   ├── merge-pdf/       # Merge Tool
-│   │   ├── split-pdf/       # Split Tool
-│   │   └── ...
-│   ├── components/
-│   │   ├── ui/              # Reusable UI components
-│   │   ├── layout/          # Layout components
-│   │   ├── pdf/             # PDF-specific components
-│   │   └── auth/            # Authentication components
-│   ├── lib/                 # Utilities and helpers
-│   └── types/               # Shared TypeScript definitions
-├── public/                  # Static assets
-└── ...
-```
-
-<!-- DOCUMENTATION -->
-
-## 📚 Documentation
-
-Detailed information about the project's health and contribution guidelines:
-
-- [**Contributing**](CONTRIBUTING.md): Guidelines for submitting code and reporting issues.
-- [**Code of Conduct**](CODE_OF_CONDUCT.md): Our standards for a healthy community.
-- [**Security Policy**](SECURITY.md): How to report security vulnerabilities.
-- [**Support**](SUPPORT.md): How to get help with SimplyPDF.
-- [**Changelog**](CHANGELOG.md): Track every update and improvement.
-- [**Roadmap**](ROADMAP.md): Our vision for the future of SimplyPDF.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONTRIBUTING -->
 
 ## 🤝 Contributing
 
-Contributions make the open-source community an amazing place to learn and create. Any contributions you make are **greatly appreciated**.
+**We simply love contributors!** ❤️
 
-Please check our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+SimplyPDF is an open-source project, and we want to make it the best PDF tool on the web. Whether you're fixing a bug, improving the docs, or adding a brand new tool, your help is welcome.
+
+### How to Contribute
+
+1.  Read our **[Contributing Guidelines](CONTRIBUTING.md)** (It's short, we promise!).
+2.  Check the **[Roadmap](ROADMAP.md)** to see what we're planning.
+3.  Pick an issue or propose a new feature.
+4.  Fork the repo and create your branch (`git checkout -b feat/AmazingFeature`).
+5.  Commit your changes (`git commit -m 'feat: Add some AmazingFeature'`).
+6.  Push to the branch (`git push origin feat/AmazingFeature`).
+7.  Open a **Pull Request**.
+
+> **Note**: We treat documentation as a first-class citizen. If you see a typo or a way to improve the docs, please submit a PR!
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- DOCUMENTATION -->
+
+## 📚 Documentation Index
+
+Everything you need to know about the project structure and governance.
+
+- 📖 **[Contributing Guide](CONTRIBUTING.md)** - How to set up and contribute.
+- ⚖️ **[Code of Conduct](CODE_OF_CONDUCT.md)** - Our pledge for a healthy community.
+- 📝 **[Changelog](CHANGELOG.md)** - History of changes (We are at v2.0.0!).
+- 🗺️ **[Roadmap](ROADMAP.md)** - Future plans and vision.
+- 🛡️ **[Security Policy](SECURITY.md)** - Reporting vulnerabilities.
+- 🆘 **[Support](SUPPORT.md)** - Where to get help.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- AUTHOR -->
 
@@ -139,10 +154,11 @@ Please check our [Contributing Guide](CONTRIBUTING.md) for details on our code o
 **Arsh Verma**
 
 - **Portfolio**: [arshcreates.vercel.app](https://arshcreates.vercel.app)
-- **Email**: [arshverma.dev@gmail.com](mailto:arshverma.dev@gmail.com)
 - **GitHub**: [@ArshVermaGit](https://github.com/ArshVermaGit)
 - **LinkedIn**: [Arsh Verma](https://www.linkedin.com/in/arshvermadev/)
 - **X (Twitter)**: [@TheArshVerma](https://x.com/TheArshVerma)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- LICENSE -->
 

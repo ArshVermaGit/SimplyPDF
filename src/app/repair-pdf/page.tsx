@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { RepairPDFClient } from './RepairPDFClient';
+import { RepairPDFClient } from '@/components/pages/repair-pdf/RepairPDFClient';
 
 export const metadata: Metadata = {
   title: 'Repair PDF Online | Fix Corrupted & Broken PDF Files',

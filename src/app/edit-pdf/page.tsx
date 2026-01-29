@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { EditPDFClient } from './EditPDFClient';
+import { EditPDFClient } from '@/components/pages/edit-pdf/EditPDFClient';
 
 export const metadata: Metadata = {
   title: 'PDF Editor Online | Edit PDF Documents for Free',

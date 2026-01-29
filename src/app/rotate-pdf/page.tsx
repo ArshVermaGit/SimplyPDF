@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { RotatePDFClient } from './RotatePDFClient';
+import { RotatePDFClient } from '@/components/pages/rotate-pdf/RotatePDFClient';
 
 export const metadata: Metadata = {
   title: 'Rotate PDF Online | Permanently Rotate PDF Pages Free',

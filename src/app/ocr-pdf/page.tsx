@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { OCRPDFClient } from './OCRPDFClient';
+import { OCRPDFClient } from '@/components/pages/ocr-pdf/OCRPDFClient';
 
 export const metadata: Metadata = {
   title: 'OCR PDF Online | Extract Text from Scanned PDFs Free',

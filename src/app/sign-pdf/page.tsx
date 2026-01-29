@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { SignPDFClient } from './SignPDFClient';
+import { SignPDFClient } from '@/components/pages/sign-pdf/SignPDFClient';
 
 export const metadata: Metadata = {
   title: 'Sign PDF Online | Add Digital Signature to PDF Free',

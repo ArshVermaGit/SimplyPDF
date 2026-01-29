@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { PDFToExcelClient } from './PDFToExcelClient';
+import { PDFToExcelClient } from '@/components/pages/pdf-to-excel/PDFToExcelClient';
 
 export const metadata: Metadata = {
   title: 'PDF to Excel Converter | Extract PDF Tables to XLSX Online',

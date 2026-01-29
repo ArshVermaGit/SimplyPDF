@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { CompressPDFClient } from './CompressPDFClient';
+import { CompressPDFClient } from '@/components/pages/compress-pdf/CompressPDFClient';
 
 export const metadata: Metadata = {
   title: 'Compress PDF Online | Reduce PDF File Size Free',

@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { JPGToPDFClient } from './JPGToPDFClient';
+import { JPGToPDFClient } from '@/components/pages/jpg-to-pdf/JPGToPDFClient';
 
 export const metadata: Metadata = {
   title: 'JPG to PDF Converter | Convert Images to PDF Online',

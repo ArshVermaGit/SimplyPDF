@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { ProtectPDFClient } from './ProtectPDFClient';
+import { ProtectPDFClient } from '@/components/pages/protect-pdf/ProtectPDFClient';
 
 export const metadata: Metadata = {
   title: 'Protect PDF with Password | Encrypt PDF Online Free',

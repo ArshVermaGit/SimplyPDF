@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { EditMetadataClient } from './EditMetadataClient';
+import { EditMetadataClient } from '@/components/pages/edit-metadata/EditMetadataClient';
 
 export const metadata: Metadata = {
   title: 'Edit PDF Metadata | Change PDF Title, Author & Tags',

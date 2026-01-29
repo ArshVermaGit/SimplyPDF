@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { OrganizePDFClient } from './OrganizePDFClient';
+import { OrganizePDFClient } from '@/components/pages/organize-pdf/OrganizePDFClient';
 
 export const metadata: Metadata = {
   title: 'Organize PDF Pages | Reorder & Delete Pages Online',

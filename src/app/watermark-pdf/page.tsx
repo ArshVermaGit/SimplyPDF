@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { WatermarkPDFClient } from './WatermarkPDFClient';
+import { WatermarkPDFClient } from '@/components/pages/watermark-pdf/WatermarkPDFClient';
 
 export const metadata: Metadata = {
   title: 'Add Watermark to PDF | Professional PDF Watermarking Free',

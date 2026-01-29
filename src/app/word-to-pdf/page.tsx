@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { WordToPDFClient } from './WordToPDFClient';
+import { WordToPDFClient } from '@/components/pages/word-to-pdf/WordToPDFClient';
 
 export const metadata: Metadata = {
   title: 'Word to PDF Converter | Convert DocX to PDF Online Free',
