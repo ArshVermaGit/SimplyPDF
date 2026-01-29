@@ -51,11 +51,13 @@ To ensure consistency and quality, we enforce strict standards:
   npm run format
   ```
 - **Linting**: We use **ESLint**. Ensure your code passes all lint checks:
+
   ```bash
   npm run lint
   ```
 
   - Note: If you encounter errors, try `npm run lint:fix` to auto-correct some issues.
+
 - **Styling**: Use **Tailwind CSS**. Avoid custom CSS classes unless absolutely necessary.
 - **Commits**: Follow [Conventional Commits](https://www.conventionalcommits.org/).
   - `feat: add rotate pdf tool`
@@ -66,13 +68,17 @@ To ensure consistency and quality, we enforce strict standards:
 
 Understanding the project structure will help you place your contributions correctly:
 
-- **`src/app`**: Application routes and pages.
+- **`src/app`**: Application routes (strictly `page.tsx`, `layout.tsx`, `loading.tsx` only).
 - **`src/components`**: Reusable UI components.
-  - **`layout`**: Structural components (Header, Footer, ToolPageLayout).
-  - **`ui`**: Generic UI elements (ToolCard, ToolPageElements).
-  - **`pdf`**: PDF-specific components (Preview, Thumbnails).
-  - **`auth`**: Authentication components (Providers, Modals).
-- **`src/lib`**: Utility functions.
-  - **`pdf`**: PDF manipulation logic (Modularized).
+  - **`pages`**: Main page implementations (Client Components). All logic goes here.
+  - **`sections`**: Modular sections (Hero, Features, etc.) used by pages.
+  - **`ui`**: Generic reusable UI atoms (Buttons, Cards, BackgroundGradient).
+  - **`layout`**: Global layout components (Navbar, Footer).
+  - **`auth`**: Authentication components.
+- **`src/lib`**: Utility functions and constants.
+  - **`constants.ts`**: Global configuration (Tool definitions, navigation items).
+  - **`legal-data.ts`**: Content for legal pages.
+- **`src/hooks`**: Custom React hooks (e.g., `useScrollReveal`).
+- **`src/types`**: Shared TypeScript definitions.
 
 Thank you for your contributions!
