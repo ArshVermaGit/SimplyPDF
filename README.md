@@ -4,7 +4,7 @@
 <br />
 <div align="center">
   <a href="https://simplypdf.vercel.app">
-    <img src="public/logo.png" alt="SimplyPDF Logo" width="100" height="100">
+    <img src="public/icon.png" alt="SimplyPDF Logo" width="100" height="100">
   </a>
 
   <h3 align="center">SimplyPDF</h3>
@@ -39,8 +39,6 @@
 <!-- ABOUT THE PROJECT -->
 
 ## ✨ About The Project
-
-[![SimplyPDF Preview](public/og-image.png)](https://simplypdf.vercel.app)
 
 **SimplyPDF** is a premium, high-performance web application designed to redefine how you interact with PDFs. Built with a hyper-polished, responsive aesthetic, it offers a seamless, desktop-class experience for editing, converting, and managing documents directly in your browser.
 
