@@ -16,6 +16,10 @@ If you've found a bug, please [open an issue](https://github.com/ArshVermaGit/Si
 
 Have an idea for a new tool or improvement? [Let us know!](https://github.com/ArshVermaGit/SimplyPDF/issues/new?template=feature_request.md)
 
+### 🛡️ Security Vulnerabilities
+
+If you discover a security vulnerability, please see our [Security Policy](SECURITY.md) for reporting guidelines.
+
 ### 💬 Community & Discussions
 
 For general questions or to chat with other users/developers, join our [GitHub Discussions](https://github.com/ArshVermaGit/SimplyPDF/discussions).
