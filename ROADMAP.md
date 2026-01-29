@@ -2,12 +2,13 @@
 
 The vision for SimplyPDF is to be the most powerful, privacy-focused PDF toolset on the web.
 
-## Phase 1: Foundation (Current)
+## Phase 1: Foundation (Completed)
 
 - [x] Core PDF tools (Merge, Split, Edit)
 - [x] Hyper-premium UI/UX focus
 - [x] 100% Client-side processing
 - [x] Basic Conversion tools
+- [x] Version 2.0.0 Release (New Branding, SEO, Assets)
 
 ## Phase 2: Advanced Editing
 
