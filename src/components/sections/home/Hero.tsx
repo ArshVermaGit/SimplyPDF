@@ -22,9 +22,11 @@ export const Hero = () => {
       className="relative flex min-h-screen items-center justify-center px-4"
     >
       {/* Background Elements */}
-      <div className="grid-pattern absolute inset-0" />
-      <div className="animate-float-slow absolute top-20 left-10 h-72 w-72 rounded-full bg-gray-100 blur-3xl" />
-      <div className="animate-float absolute right-10 bottom-20 h-96 w-96 rounded-full bg-gray-50 blur-3xl" />
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="grid-pattern absolute inset-0" />
+        <div className="animate-float-slow absolute top-20 left-10 h-72 w-72 rounded-full bg-gray-100 blur-3xl" />
+        <div className="animate-float absolute right-10 bottom-20 h-96 w-96 rounded-full bg-gray-50 blur-3xl" />
+      </div>
 
       {/* Floating Icons */}
       <motion.div
