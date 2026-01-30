@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-01-30
+
+### Major Changes
+
+- **UX & Stability Polish**: Enhanced the onboarding and consent experience by eliminating UI flickering and improving component loading reliability.
+- **Portals Implementation**: All critical modals (Auth, Sign-In) now use React Portals to ensure perfect z-index management and layout consistency across the site.
+- **Mobile Navigation Fixes**: Resolved background scrolling issues and added internal scroll support to the mobile menu, ensuring all tools are accessible on smaller devices.
+
+### Added
+
+- **Hydration Safety**: Components using client-side storage now feature improved hydration checks for more stable rendering.
+
+### Fixed
+
+- **Modals & Consent**: Fixed z-index layering and appearance delays for `WelcomeAuthModal` and `CookieConsent`.
+- **Linting & Quality**: Resolved all `react-hooks/set-state-in-effect` linting errors for better performance and code health.
+- **Contact Page**: Streamlined the contact experience by removing the complex message form in favor of direct communication channels (Email, Twitter, LinkedIn).
+
 ## [2.0.0] - 2026-01-30
 
 ### Major Changes

@@ -5,29 +5,30 @@ import Link from "next/link";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 
 export const ContactHeader = () => {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
-        >
-            <Link
-                href="/"
-                className="inline-flex items-center gap-2 text-gray-500 hover:text-black mb-8 transition-colors"
-            >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Home
-            </Link>
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-16 text-center"
+    >
+      <Link
+        href="/"
+        className="mb-8 inline-flex items-center gap-2 text-gray-500 transition-colors hover:text-black"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Home
+      </Link>
 
-            <div className="w-20 h-20 bg-black text-white rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <MessageSquare className="w-10 h-10" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                Get in Touch
-            </h1>
-            <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-                Have a question, feedback, or just want to say hi? I&apos;d love to hear from you.
-            </p>
-        </motion.div>
-    );
+      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-black text-white">
+        <MessageSquare className="h-10 w-10" />
+      </div>
+      <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
+        Get in Touch
+      </h1>
+      <p className="mx-auto max-w-2xl text-lg text-gray-500">
+        Have a question, feedback, or just want to say hi? I&apos;d love to hear
+        from you.
+      </p>
+    </motion.div>
+  );
 };

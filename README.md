@@ -137,7 +137,7 @@ Everything you need to know about the project structure and governance.
 
 - 📖 **[Contributing Guide](CONTRIBUTING.md)** - How to set up and contribute.
 - ⚖️ **[Code of Conduct](CODE_OF_CONDUCT.md)** - Our pledge for a healthy community.
-- 📝 **[Changelog](CHANGELOG.md)** - History of changes (We are at v2.0.0!).
+- 📝 **[Changelog](CHANGELOG.md)** - History of changes (We are at v3.0.0!).
 - 🗺️ **[Roadmap](ROADMAP.md)** - Future plans and vision.
 - 🛡️ **[Security Policy](SECURITY.md)** - Reporting vulnerabilities.
 - 🆘 **[Support](SUPPORT.md)** - Where to get help.

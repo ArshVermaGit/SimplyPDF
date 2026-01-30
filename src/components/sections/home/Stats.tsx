@@ -2,13 +2,17 @@ import { stats } from "@/lib/constants";
 
 export const Stats = () => {
   return (
-    <section className="py-16 border-y border-gray-100 bg-gray-50/50">
+    <section className="border-y border-gray-100 bg-gray-50/50 py-16">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 stagger-children">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {stats.map((stat, index) => (
-            <div key={index} className="text-center">
-              <div className="text-4xl md:text-5xl font-bold mb-2">{stat.value}</div>
-              <div className="text-gray-500 text-sm uppercase tracking-wider">{stat.label}</div>
+            <div key={index} className="group text-center">
+              <div className="mb-3 text-5xl font-black tracking-tighter text-black transition-transform duration-500 group-hover:scale-110 md:text-7xl">
+                {stat.value}
+              </div>
+              <div className="text-[10px] font-black tracking-[0.3em] whitespace-nowrap text-gray-400 uppercase md:text-xs">
+                {stat.label}
+              </div>
             </div>
           ))}
         </div>
