@@ -153,7 +153,7 @@ If you find this tool helpful and want to support its development, consider buyi
 <div align="center">
     
 <a href="https://www.buymeacoffee.com/ArshVerma">
-  <img src="public/images/buy-me-a-coffee.png" width="200" />
+  <img src="public/buy-me-a-coffee.png" width="200" />
 </a>
 
 </div>
