@@ -144,26 +144,35 @@ Everything you need to know about the project structure and governance.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- AUTHOR -->
+---
 
-## 👤 Author
+## ☕ Support the Project
 
-**Arsh Verma**
+If you find this tool helpful and want to support its development, consider buying me a coffee! Your support helps keep the project alive and free.
 
-- **Portfolio**: [arshcreates.vercel.app](https://arshcreates.vercel.app)
-- **GitHub**: [@ArshVermaGit](https://github.com/ArshVermaGit)
-- **LinkedIn**: [Arsh Verma](https://www.linkedin.com/in/arshvermadev/)
-- **X (Twitter)**: [@TheArshVerma](https://x.com/TheArshVerma)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- LICENSE -->
-
-## 📄 License
-
-Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
-
-<br />
 <div align="center">
-  Made with ❤️ by Arsh Verma
+    
+<a href="https://www.buymeacoffee.com/ArshVerma">
+  <img src="public/images/buy-me-a-coffee.png" width="200" />
+</a>
+
 </div>
+
+## 📱 Connect with Me
+
+I'd love to hear your feedback or discuss potential collaborations!
+
+<div align="center">
+
+[![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/ArshVermaGit)
+[![LinkedIn](https://skillicons.dev/icons?i=linkedin)](https://www.linkedin.com/in/arshvermadev/)
+[![Twitter](https://skillicons.dev/icons?i=twitter)](https://x.com/TheArshVerma)
+[![Gmail](https://skillicons.dev/icons?i=gmail)](mailto:arshverma.dev@gmail.com)
+
+</div>
+
+---
+
+<p align="center">
+  Built with ❤️ by <strong>Arsh Verma</strong>
+</p>
