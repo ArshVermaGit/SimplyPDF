@@ -45,6 +45,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -54,6 +55,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-family: var(--font-sans);
   overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Selection */
