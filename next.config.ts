@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
-        path: 'path-browserify',
+        path: "path-browserify",
         crypto: false,
       };
     }
@@ -15,9 +15,9 @@ const nextConfig: NextConfig = {
   // Silence Turbopack error and provide module aliases
   turbopack: {
     resolveAlias: {
-      fs: './src/lib/empty-module.ts',
-      path: 'path-browserify',
-      crypto: './src/lib/empty-module.ts',
+      fs: "./src/lib/empty-module.ts",
+      path: "path-browserify",
+      crypto: "./src/lib/empty-module.ts",
     },
   },
 };
