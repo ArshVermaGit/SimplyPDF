@@ -55,9 +55,9 @@ export const metadata: Metadata = {
     "No upload PDF tool",
   ],
   icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/apple-icon.png",
+    icon: "/icon-new.png",
+    shortcut: "/icon-new.png",
+    apple: "/apple-icon-new.png",
   },
   openGraph: {
     title: "SimplyPDF | The Easiest & Most Secure PDF Tool",
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image-new.png",
         width: 1200,
         height: 630,
         alt: "SimplyPDF - Free Online PDF Tools",
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     title: "SimplyPDF | #1 Free Online PDF Tools",
     description:
       "Premium PDF editing and management, 100% private and secure. No uploads, no limits.",
-    images: ["/og-image.png"],
+    images: ["/og-image-new.png"],
   },
   other: {
     "google-adsense-account": "ca-pub-4266443141083729",
