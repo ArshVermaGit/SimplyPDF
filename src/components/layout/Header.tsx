@@ -132,7 +132,7 @@ export default function Header() {
           <Link href="/" className="group flex items-center gap-2">
             <div className="relative h-10 w-10 transition-transform group-hover:scale-110 group-hover:rotate-3">
               <Image
-                src="/logo.png"
+                src="/logo-new.png"
                 alt="SimplyPDF Logo"
                 fill
                 className="rounded-xl object-contain"
