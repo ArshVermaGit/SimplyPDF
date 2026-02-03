@@ -84,7 +84,8 @@ export const metadata: Metadata = {
     images: ["/og-image-new.png"],
   },
   other: {
-    "google-adsense-account": "ca-pub-4266443141083729",
+    "google-adsense-account":
+      process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID || "ca-pub-4266443141083729",
   },
 };
 
@@ -122,7 +123,9 @@ export default function RootLayout({
       >
         <Script
           async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4266443141083729"
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${
+            process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID || "ca-pub-4266443141083729"
+          }`}
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
