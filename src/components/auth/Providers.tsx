@@ -6,6 +6,7 @@ import { HistoryProvider } from "@/context/HistoryContext";
 import { ReactNode } from "react";
 
 const GOOGLE_CLIENT_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
   "92545735176-rg30uefh7bbm94urcdidftnbgfp6uo6v.apps.googleusercontent.com";
 
 export function Providers({ children }: { children: ReactNode }) {
