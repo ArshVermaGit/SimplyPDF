@@ -414,8 +414,8 @@ body {
 /* Scroll-triggered animations */
 .scroll-reveal {
   opacity: 0;
-  transform: translateY(40px);
-  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(20px);
+  transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .scroll-reveal.visible {
@@ -425,8 +425,8 @@ body {
 
 .scroll-reveal-left {
   opacity: 0;
-  transform: translateX(-40px);
-  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateX(-30px);
+  transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .scroll-reveal-left.visible {
@@ -436,14 +436,40 @@ body {
 
 .scroll-reveal-right {
   opacity: 0;
-  transform: translateX(40px);
-  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateX(30px);
+  transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .scroll-reveal-right.visible {
   opacity: 1;
   transform: translateX(0);
 }
+
+.scroll-reveal-scale {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.scroll-reveal-scale.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Stagger entrance variations */
+.stagger-up > * {
+  opacity: 0;
+  transform: translateY(15px);
+}
+
+.stagger-up.visible > *:nth-child(1) { transition-delay: 0.1s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(2) { transition-delay: 0.15s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(3) { transition-delay: 0.2s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(4) { transition-delay: 0.25s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(5) { transition-delay: 0.3s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(6) { transition-delay: 0.35s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(7) { transition-delay: 0.4s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(8) { transition-delay: 0.45s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
 
 /* Stagger children */
 .stagger-children > * {

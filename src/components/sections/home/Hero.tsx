@@ -96,23 +96,25 @@ export const Hero = () => {
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
           className="flex flex-col justify-center gap-4 sm:flex-row"
         >
           <Link
             href="/merge-pdf"
-            className="btn-primary group inline-flex items-center justify-center gap-2 px-10 py-4 text-lg"
+            className="btn-primary group relative inline-flex items-center justify-center gap-2 overflow-hidden px-10 py-4 text-lg"
           >
-            Get Started
-            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            <span className="relative z-10 flex items-center gap-2">
+              Get Started
+              <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+            </span>
           </Link>
           <Link
             href="#tools"
-            className="btn-secondary inline-flex items-center justify-center px-10 py-4 text-lg"
+            className="btn-secondary group relative inline-flex items-center justify-center overflow-hidden px-10 py-4 text-lg"
           >
-            Explore Tools
+            <span className="relative z-10">Explore Tools</span>
           </Link>
         </motion.div>
       </div>

@@ -4,7 +4,7 @@ export const CTA = () => {
   return (
     <section className="py-24 md:py-32">
       <div className="container mx-auto px-4">
-        <div className="scroll-reveal relative mx-auto max-w-4xl overflow-hidden rounded-[3rem] bg-gray-50 p-12 text-center md:p-20">
+        <div className="scroll-reveal-scale relative mx-auto max-w-4xl overflow-hidden rounded-[3rem] bg-gray-50 p-12 text-center md:p-20">
           <div className="grid-pattern absolute inset-0 opacity-50" />
           <div className="absolute top-0 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gray-200 blur-3xl" />
 

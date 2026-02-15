@@ -29,13 +29,13 @@ export const SimpleCTA = ({
   secondaryBtnLink,
   secondaryBtnClass = "btn-secondary",
   className = "",
-  delay = 0.5,
 }: SimpleCTAProps) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
+      initial={{ opacity: 0, scale: 0.95, y: 15 }}
+      whileInView={{ opacity: 1, scale: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className={`mt-16 rounded-3xl bg-gray-50 p-10 text-center ${className}`}
     >
       <h2 className="mb-4 text-2xl font-bold md:text-3xl">{title}</h2>

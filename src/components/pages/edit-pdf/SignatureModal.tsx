@@ -90,6 +90,22 @@ export function SignatureModal({
     onClose();
   };
 
+  // Scroll Locking Effect
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [isOpen]);
+
   // Resize canvas on open
   useEffect(() => {
     if (isOpen && canvasRef.current) {
@@ -106,12 +122,21 @@ export function SignatureModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"
+            exit={{ opacity: 0, scale: 0.9, y: 15 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-gray-100 p-6">
               <h3 className="text-xl font-bold">Add Signature</h3>

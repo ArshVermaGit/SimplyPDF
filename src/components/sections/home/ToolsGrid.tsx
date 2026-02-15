@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { tools } from "@/lib/constants";
-import { motion } from "framer-motion";
 
 export const ToolsGrid = () => {
   const [showAll, setShowAll] = useState(false);
@@ -30,15 +29,15 @@ export const ToolsGrid = () => {
         </div>
 
         {/* Featured Bento Grid */}
-        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="stagger-up mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {featuredTools.map((tool, index) => (
             <Link
               key={tool.href}
               href={tool.href}
-              className={`tool-card group flex flex-col ${index === 0 ? "min-h-[400px] lg:col-span-2 lg:row-span-2" : "min-h-[220px]"}`}
+              className={`tool-card group flex flex-col transition-all duration-300 hover:shadow-2xl ${index === 0 ? "min-h-[400px] lg:col-span-2 lg:row-span-2" : "min-h-[220px]"}`}
             >
               <div
-                className={`tool-icon ${index === 0 ? "h-20 w-20" : "h-14 w-14"} mb-6 transition-all duration-500 group-hover:bg-black group-hover:text-white`}
+                className={`tool-icon ${index === 0 ? "h-20 w-20" : "h-14 w-14"} mb-6 transition-all duration-500 group-hover:scale-110 group-hover:bg-black group-hover:text-white`}
               >
                 <tool.icon className={index === 0 ? "h-10 w-10" : "h-7 w-7"} />
               </div>
@@ -61,19 +60,14 @@ export const ToolsGrid = () => {
         </div>
 
         {/* Others Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="stagger-up grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {displayedOthers.map((tool) => (
-            <motion.div
-              key={tool.href}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="h-full"
-            >
+            <div key={tool.href} className="h-full">
               <Link
                 href={tool.href}
-                className="tool-card group flex h-full min-h-[220px] flex-col"
+                className="tool-card group flex h-full min-h-[220px] flex-col transition-all duration-300 hover:shadow-xl"
               >
-                <div className="tool-icon mb-6 h-14 w-14 transition-all duration-500 group-hover:bg-black group-hover:text-white">
+                <div className="tool-icon mb-6 h-14 w-14 transition-all duration-500 group-hover:scale-110 group-hover:bg-black group-hover:text-white">
                   <tool.icon className="h-7 w-7" />
                 </div>
                 <h3 className="mb-3 text-xl font-black tracking-tight">
@@ -87,7 +81,7 @@ export const ToolsGrid = () => {
                   <ArrowRight className="ml-2 h-3 w-3 transition-transform group-hover:translate-x-1" />
                 </div>
               </Link>
-            </motion.div>
+            </div>
           ))}
         </div>
 

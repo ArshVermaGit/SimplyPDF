@@ -98,7 +98,6 @@ export function OrganizePDFClient() {
     setStatus("loading");
     setErrorMessage("");
     try {
-      console.log("Loading pdfjs-dist...");
       const pdfjsLib = await import("pdfjs-dist");
       const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
       pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;

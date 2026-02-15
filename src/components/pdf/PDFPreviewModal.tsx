@@ -47,6 +47,22 @@ export function PDFPreviewModal({
     setPage(currentPage);
   }, [currentPage]);
 
+  // Scroll Locking Effect
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [isOpen]);
+
   // Scroll active thumbnail into view
   useEffect(() => {
     if (thumbnailRef.current) {
@@ -92,6 +108,7 @@ export function PDFPreviewModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
         className="fixed inset-0 z-100 flex flex-col bg-black/95 backdrop-blur-xl"
       >
         {/* Header Overlay */}
@@ -149,10 +166,10 @@ export function PDFPreviewModal({
           <AnimatePresence mode="wait">
             <motion.div
               key={page}
-              initial={{ opacity: 0, scale: 0.9, x: 20 }}
+              initial={{ opacity: 0, scale: 0.95, x: 20 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
-              exit={{ opacity: 0, scale: 1.1, x: -20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              exit={{ opacity: 0, scale: 1.05, x: -20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="relative flex h-full w-full items-center justify-center p-8 md:p-16 lg:p-24"
             >
               {images[page] && (

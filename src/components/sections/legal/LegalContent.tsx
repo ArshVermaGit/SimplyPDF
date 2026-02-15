@@ -16,16 +16,16 @@ interface LegalContentProps {
 
 export const LegalContent = ({
   sections,
-  delayOffset = 0.1,
 }: LegalContentProps) => {
   return (
     <div className="space-y-6">
       {sections.map((section, index) => (
         <motion.div
           key={section.title}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: delayOffset + index * 0.03 }}
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 + index * 0.05, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="rounded-2xl border border-gray-100 bg-white p-8 transition-all duration-300 hover:border-gray-200 hover:shadow-lg"
         >
           <div className="flex items-start gap-4">

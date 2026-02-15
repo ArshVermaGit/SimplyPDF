@@ -124,7 +124,6 @@ export function SplitPDFClient() {
     setStatus("loading");
     setErrorMessage("");
     try {
-      console.log("Loading pdfjs-dist...");
       const pdfjsLib = await import("pdfjs-dist");
       const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
       pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
@@ -138,7 +137,6 @@ export function SplitPDFClient() {
 
       const pdfDoc = await loadingTask.promise;
       const numPages = pdfDoc.numPages;
-      console.log(`${pdfFile.name} has ${numPages} pages`);
 
       const pageInfos: PageInfo[] = [];
       for (let i = 1; i <= numPages; i++) {

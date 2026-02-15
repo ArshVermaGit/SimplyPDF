@@ -6,21 +6,31 @@ export function useScrollReveal(
   selector: string = ".scroll-reveal, .stagger-children"
 ) {
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
-    );
+    const setupObserver = () => {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("visible");
+              observer.unobserve(entry.target); // Stop observing once visible
+            }
+          });
+        },
+        { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+      );
 
-    document.querySelectorAll(selector).forEach((el) => {
-      observer.observe(el);
-    });
+      const elements = document.querySelectorAll(selector);
+      elements.forEach((el) => observer.observe(el));
 
-    return () => observer.disconnect();
+      return () => observer.disconnect();
+    };
+
+    if ("requestIdleCallback" in window) {
+      const handle = window.requestIdleCallback(setupObserver);
+      return () => window.cancelIdleCallback(handle);
+    } else {
+      const timeout = setTimeout(setupObserver, 100);
+      return () => clearTimeout(timeout);
+    }
   }, [selector]);
 }

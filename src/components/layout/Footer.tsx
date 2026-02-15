@@ -52,7 +52,7 @@ export default function Footer() {
             <Link href="/" className="group mb-6 flex items-center gap-2">
               <div className="relative h-10 w-10 transition-transform group-hover:scale-110 group-hover:rotate-3">
                 <Image
-                  src="/logo-new.png"
+                  src="/logo.png"
                   alt="SimplyPDF Logo"
                   fill
                   className="rounded-xl bg-white object-contain"

@@ -22,7 +22,7 @@ export const Features = () => {
           </p>
         </div>
 
-        <div className="stagger-children grid gap-8 md:grid-cols-3">
+        <div className="stagger-up grid gap-8 md:grid-cols-3">
           {features.map((feature, index) => (
             <div
               key={index}

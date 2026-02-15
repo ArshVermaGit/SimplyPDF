@@ -3,9 +3,20 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import dynamic from "next/dynamic";
 import { X, LogIn, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/context/AuthProvider";
+import { CredentialResponse } from "@react-oauth/google";
+
+const GoogleLogin = dynamic(
+  () => import("@react-oauth/google").then((mod) => mod.GoogleLogin),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[44px] w-full animate-pulse rounded-full bg-gray-100 placeholder-google" />
+    ),
+  }
+);
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -25,12 +36,15 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     }
 
     return () => {
       document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     };
   }, [isOpen]);
 
@@ -50,15 +64,17 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
             onClick={onClose}
             className="fixed inset-0 z-9999 cursor-pointer bg-black/80 backdrop-blur-md transition-opacity"
           />
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.9, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            exit={{ opacity: 0, scale: 0.9, y: 15 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="pointer-events-none fixed top-1/2 left-1/2 z-10000 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 px-4"
           >
             {/* Glassmorphism Card */}
@@ -115,7 +131,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
                   <div className="flex w-full justify-center">
                     <GoogleLogin
                       onSuccess={handleLoginSuccess}
-                      onError={() => console.log("Login Failed")}
+                      onError={() => {}}
                       theme="filled_black"
                       size="large"
                       text="signin_with"

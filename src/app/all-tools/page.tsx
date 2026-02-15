@@ -80,7 +80,7 @@ export default function SitemapPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
+        <div className="stagger-up grid grid-cols-1 gap-12 md:grid-cols-3">
           {sections.map((section) => (
             <div
               key={section.title}
