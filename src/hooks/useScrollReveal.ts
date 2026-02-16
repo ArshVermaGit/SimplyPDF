@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 export function useScrollReveal(
-  selector: string = ".scroll-reveal, .stagger-children"
+  selector: string = ".scroll-reveal, .scroll-reveal-left, .scroll-reveal-right, .scroll-reveal-scale, .stagger-up, .stagger-children"
 ) {
   useEffect(() => {
     const setupObserver = () => {
