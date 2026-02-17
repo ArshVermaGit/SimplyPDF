@@ -19,7 +19,7 @@ export default function Home() {
   useScrollReveal();
 
   return (
-    <main className="overflow-hidden">
+    <main>
       <Hero />
       <Stats />
       <ToolsGrid />
