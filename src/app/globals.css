@@ -469,6 +469,30 @@ body {
 .stagger-up.visible > *:nth-child(6) { transition-delay: 0.35s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
 .stagger-up.visible > *:nth-child(7) { transition-delay: 0.4s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
 .stagger-up.visible > *:nth-child(8) { transition-delay: 0.45s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(9) { transition-delay: 0.5s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(10) { transition-delay: 0.55s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(11) { transition-delay: 0.6s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(12) { transition-delay: 0.65s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(13) { transition-delay: 0.7s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(14) { transition-delay: 0.75s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(15) { transition-delay: 0.8s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(16) { transition-delay: 0.85s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(17) { transition-delay: 0.9s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(18) { transition-delay: 0.95s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(19) { transition-delay: 1s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(20) { transition-delay: 1.05s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(21) { transition-delay: 1.1s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(22) { transition-delay: 1.15s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(23) { transition-delay: 1.2s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(24) { transition-delay: 1.25s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(25) { transition-delay: 1.3s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(26) { transition-delay: 1.35s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(27) { transition-delay: 1.4s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(28) { transition-delay: 1.45s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(29) { transition-delay: 1.5s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(30) { transition-delay: 1.55s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(31) { transition-delay: 1.6s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+.stagger-up.visible > *:nth-child(32) { transition-delay: 1.65s; opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
 
 /* Stagger children */
 .stagger-children > * {
@@ -476,66 +500,38 @@ body {
   transform: translateY(20px);
 }
 
-.stagger-children.visible > *:nth-child(1) {
-  animation: slide-up 0.6s 0.1s forwards;
-}
-.stagger-children.visible > *:nth-child(2) {
-  animation: slide-up 0.6s 0.2s forwards;
-}
-.stagger-children.visible > *:nth-child(3) {
-  animation: slide-up 0.6s 0.3s forwards;
-}
-.stagger-children.visible > *:nth-child(4) {
-  animation: slide-up 0.6s 0.4s forwards;
-}
-.stagger-children.visible > *:nth-child(5) {
-  animation: slide-up 0.6s 0.5s forwards;
-}
-.stagger-children.visible > *:nth-child(6) {
-  animation: slide-up 0.6s 0.6s forwards;
-}
-.stagger-children.visible > *:nth-child(7) {
-  animation: slide-up 0.6s 0.7s forwards;
-}
-.stagger-children.visible > *:nth-child(8) {
-  animation: slide-up 0.6s 0.8s forwards;
-}
-.stagger-children.visible > *:nth-child(9) {
-  animation: slide-up 0.6s 0.9s forwards;
-}
-.stagger-children.visible > *:nth-child(10) {
-  animation: slide-up 0.6s 1s forwards;
-}
-.stagger-children.visible > *:nth-child(11) {
-  animation: slide-up 0.6s 1.1s forwards;
-}
-.stagger-children.visible > *:nth-child(12) {
-  animation: slide-up 0.6s 1.2s forwards;
-}
-.stagger-children.visible > *:nth-child(13) {
-  animation: slide-up 0.6s 1.3s forwards;
-}
-.stagger-children.visible > *:nth-child(14) {
-  animation: slide-up 0.6s 1.4s forwards;
-}
-.stagger-children.visible > *:nth-child(15) {
-  animation: slide-up 0.6s 1.5s forwards;
-}
-.stagger-children.visible > *:nth-child(16) {
-  animation: slide-up 0.6s 1.6s forwards;
-}
-.stagger-children.visible > *:nth-child(17) {
-  animation: slide-up 0.6s 1.7s forwards;
-}
-.stagger-children.visible > *:nth-child(18) {
-  animation: slide-up 0.6s 1.8s forwards;
-}
-.stagger-children.visible > *:nth-child(19) {
-  animation: slide-up 0.6s 1.9s forwards;
-}
-.stagger-children.visible > *:nth-child(20) {
-  animation: slide-up 0.6s 2s forwards;
-}
+.stagger-children.visible > *:nth-child(1) { animation: slide-up 0.6s 0.1s forwards; }
+.stagger-children.visible > *:nth-child(2) { animation: slide-up 0.6s 0.2s forwards; }
+.stagger-children.visible > *:nth-child(3) { animation: slide-up 0.6s 0.3s forwards; }
+.stagger-children.visible > *:nth-child(4) { animation: slide-up 0.6s 0.4s forwards; }
+.stagger-children.visible > *:nth-child(5) { animation: slide-up 0.6s 0.5s forwards; }
+.stagger-children.visible > *:nth-child(6) { animation: slide-up 0.6s 0.6s forwards; }
+.stagger-children.visible > *:nth-child(7) { animation: slide-up 0.6s 0.7s forwards; }
+.stagger-children.visible > *:nth-child(8) { animation: slide-up 0.6s 0.8s forwards; }
+.stagger-children.visible > *:nth-child(9) { animation: slide-up 0.6s 0.9s forwards; }
+.stagger-children.visible > *:nth-child(10) { animation: slide-up 0.6s 1s forwards; }
+.stagger-children.visible > *:nth-child(11) { animation: slide-up 0.6s 1.1s forwards; }
+.stagger-children.visible > *:nth-child(12) { animation: slide-up 0.6s 1.2s forwards; }
+.stagger-children.visible > *:nth-child(13) { animation: slide-up 0.6s 1.3s forwards; }
+.stagger-children.visible > *:nth-child(14) { animation: slide-up 0.6s 1.4s forwards; }
+.stagger-children.visible > *:nth-child(15) { animation: slide-up 0.6s 1.5s forwards; }
+.stagger-children.visible > *:nth-child(16) { animation: slide-up 0.6s 1.6s forwards; }
+.stagger-children.visible > *:nth-child(17) { animation: slide-up 0.6s 1.7s forwards; }
+.stagger-children.visible > *:nth-child(18) { animation: slide-up 0.6s 1.8s forwards; }
+.stagger-children.visible > *:nth-child(19) { animation: slide-up 0.6s 1.9s forwards; }
+.stagger-children.visible > *:nth-child(20) { animation: slide-up 0.6s 2s forwards; }
+.stagger-children.visible > *:nth-child(21) { animation: slide-up 0.6s 2.1s forwards; }
+.stagger-children.visible > *:nth-child(22) { animation: slide-up 0.6s 2.2s forwards; }
+.stagger-children.visible > *:nth-child(23) { animation: slide-up 0.6s 2.3s forwards; }
+.stagger-children.visible > *:nth-child(24) { animation: slide-up 0.6s 2.4s forwards; }
+.stagger-children.visible > *:nth-child(25) { animation: slide-up 0.6s 2.5s forwards; }
+.stagger-children.visible > *:nth-child(26) { animation: slide-up 0.6s 2.6s forwards; }
+.stagger-children.visible > *:nth-child(27) { animation: slide-up 0.6s 2.7s forwards; }
+.stagger-children.visible > *:nth-child(28) { animation: slide-up 0.6s 2.8s forwards; }
+.stagger-children.visible > *:nth-child(29) { animation: slide-up 0.6s 2.9s forwards; }
+.stagger-children.visible > *:nth-child(30) { animation: slide-up 0.6s 3s forwards; }
+.stagger-children.visible > *:nth-child(31) { animation: slide-up 0.6s 3.1s forwards; }
+.stagger-children.visible > *:nth-child(32) { animation: slide-up 0.6s 3.2s forwards; }
 
 /* Perspective container */
 .perspective {
