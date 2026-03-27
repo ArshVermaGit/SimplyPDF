@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json.schemastore.org/package.json",
   "name": "simply-pdf",
   "version": "3.0.0",
   "private": true,
