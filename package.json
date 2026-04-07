@@ -16,7 +16,7 @@
     "@types/jspdf": "^1.3.3",
     "clsx": "^2.1.1",
     "docx": "^9.5.1",
-    "epubjs": "^0.3.93",
+    "epubjs": "^0.4.2",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.23.26",
     "html2canvas": "^1.4.1",
