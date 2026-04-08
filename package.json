@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package",
   "name": "simply-pdf",
   "version": "3.0.0",
   "private": true,
@@ -56,6 +57,7 @@
     "minimatch": "^10.2.4",
     "dompurify": "^3.3.3",
     "underscore": "^1.13.8",
-    "picomatch": "^4.0.4"
+    "picomatch": "^4.0.4",
+    "xmldom": "npm:@xmldom/xmldom@^0.8.10"
   }
 }
