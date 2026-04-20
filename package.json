@@ -26,7 +26,7 @@
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.562.0",
     "mammoth": "^1.11.0",
-    "next": "^16.2.1",
+    "next": "^16.2.3",
     "path-browserify": "^1.0.1",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^2.4.5",
