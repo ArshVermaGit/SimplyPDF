@@ -55,7 +55,7 @@
   },
   "overrides": {
     "minimatch": "^10.2.4",
-    "dompurify": "^3.3.3",
+    "dompurify": "^3.4.0",
     "underscore": "^1.13.8",
     "picomatch": "^4.0.4",
     "xmldom": "npm:@xmldom/xmldom@^0.8.10"
